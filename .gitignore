@@ -43,5 +43,6 @@ next-env.d.ts
 # ceremony local storage (keep folder marker)
 /storage/uploads/**
 !/storage/uploads/.gitkeep
+/storage/cache/**
 /storage/session.json
 /storage/file-index.json

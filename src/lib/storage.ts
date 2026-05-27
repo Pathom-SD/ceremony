@@ -5,6 +5,7 @@ import { FILE_INDEX, SESSION_FILE, UPLOADS_DIR } from "./paths";
 import type { FileIndexPayload, StoredFileRecord } from "./file-types";
 import { mimeForExt, normalizeExt } from "./file-types";
 import { defaultSession, type SessionPayload } from "./session-types";
+import { clearPdfCache, removeCachedPdf } from "./document-convert";
 
 async function ensureDir(dir: string) {
   await fs.mkdir(dir, { recursive: true });
@@ -14,7 +15,14 @@ export async function readSession(): Promise<SessionPayload> {
   try {
     const raw = await fs.readFile(SESSION_FILE, "utf8");
     const data = JSON.parse(raw) as SessionPayload;
-    return { ...defaultSession, ...data };
+    return {
+      ...defaultSession,
+      ...data,
+      summaryProject: {
+        ...defaultSession.summaryProject,
+        ...data.summaryProject,
+      },
+    };
   } catch {
     return { ...defaultSession };
   }
@@ -106,13 +114,29 @@ export async function deleteFileRecord(fileId: string): Promise<boolean> {
   } catch {
     /* ignore missing file */
   }
+  await removeCachedPdf(removed.id);
   await writeFileIndex(index);
   return true;
+}
+
+export async function updateFileOriginalName(
+  fileId: string,
+  nextName: string,
+): Promise<StoredFileRecord | null> {
+  const index = await readFileIndex();
+  const rec = index.files.find((f) => f.id === fileId);
+  if (!rec) return null;
+  const raw = sanitizeOriginalName(nextName);
+  const base = path.parse(raw).name || "file";
+  rec.originalName = `${base.slice(0, 180)}${rec.ext}`;
+  await writeFileIndex(index);
+  return rec;
 }
 
 export async function clearAllStorage(): Promise<void> {
   await writeSession({ ...defaultSession });
   await writeFileIndex({ files: [] });
+  await clearPdfCache();
   try {
     const entries = await fs.readdir(UPLOADS_DIR, { withFileTypes: true });
     for (const e of entries) {

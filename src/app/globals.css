@@ -14,6 +14,17 @@
   --ceremony-danger-soft: oklch(0.955 0.025 28);
   --ceremony-ring: oklch(0.65 0.14 255);
   --ceremony-shadow: 0 18px 45px -34px oklch(0.25 0.04 255 / 0.35);
+  --ceremony-bg-glow: oklch(0.91 0.04 255 / 0.75);
+  --ceremony-bg-top: oklch(0.985 0.004 248);
+  --ceremony-accent-quality: oklch(0.52 0.16 156);
+  --ceremony-accent-quality-soft: oklch(0.52 0.16 156 / 0.12);
+  --ceremony-accent-price: oklch(0.58 0.16 70);
+  --ceremony-accent-price-soft: oklch(0.58 0.16 70 / 0.14);
+  --ceremony-accent-actual: oklch(0.55 0.16 235);
+  --ceremony-accent-actual-soft: oklch(0.55 0.16 235 / 0.14);
+  --ceremony-accent-delivery: oklch(0.55 0.18 305);
+  --ceremony-accent-delivery-soft: oklch(0.55 0.18 305 / 0.14);
+  color-scheme: light;
 }
 
 @theme inline {
@@ -38,10 +49,10 @@ body {
   background:
     radial-gradient(
       circle at top left,
-      oklch(0.91 0.04 255 / 0.75),
+      var(--ceremony-bg-glow),
       transparent 34rem
     ),
-    linear-gradient(180deg, oklch(0.985 0.004 248), var(--ceremony-bg));
+    linear-gradient(180deg, var(--ceremony-bg-top), var(--ceremony-bg));
   color: var(--ceremony-ink);
   text-rendering: optimizeLegibility;
 }
@@ -62,18 +73,27 @@ button:disabled {
   cursor: not-allowed;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ceremony-bg: oklch(0.18 0.025 255);
-    --ceremony-surface: oklch(0.23 0.027 255);
-    --ceremony-surface-2: oklch(0.28 0.03 255);
-    --ceremony-ink: oklch(0.94 0.011 248);
-    --ceremony-muted: oklch(0.72 0.018 248);
-    --ceremony-border: oklch(0.34 0.03 255);
-    --ceremony-primary: oklch(0.68 0.11 255);
-    --ceremony-primary-soft: oklch(0.32 0.055 255);
-    --ceremony-primary-ink: oklch(0.16 0.025 255);
-    --ceremony-danger: oklch(0.72 0.16 28);
-    --ceremony-danger-soft: oklch(0.31 0.06 28);
-  }
+:root[data-theme="dark"] {
+  --ceremony-bg: oklch(0.18 0.025 255);
+  --ceremony-surface: oklch(0.23 0.027 255);
+  --ceremony-surface-2: oklch(0.28 0.03 255);
+  --ceremony-ink: oklch(0.94 0.011 248);
+  --ceremony-muted: oklch(0.72 0.018 248);
+  --ceremony-border: oklch(0.34 0.03 255);
+  --ceremony-primary: oklch(0.68 0.11 255);
+  --ceremony-primary-soft: oklch(0.32 0.055 255);
+  --ceremony-primary-ink: oklch(0.16 0.025 255);
+  --ceremony-danger: oklch(0.72 0.16 28);
+  --ceremony-danger-soft: oklch(0.31 0.06 28);
+  --ceremony-bg-glow: oklch(0.35 0.09 255 / 0.45);
+  --ceremony-bg-top: oklch(0.2 0.03 255);
+  --ceremony-accent-quality: oklch(0.82 0.16 156);
+  --ceremony-accent-quality-soft: oklch(0.82 0.16 156 / 0.16);
+  --ceremony-accent-price: oklch(0.85 0.15 80);
+  --ceremony-accent-price-soft: oklch(0.85 0.15 80 / 0.18);
+  --ceremony-accent-actual: oklch(0.82 0.13 235);
+  --ceremony-accent-actual-soft: oklch(0.82 0.13 235 / 0.18);
+  --ceremony-accent-delivery: oklch(0.82 0.15 305);
+  --ceremony-accent-delivery-soft: oklch(0.82 0.15 305 / 0.18);
+  color-scheme: dark;
 }

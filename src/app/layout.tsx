@@ -3,7 +3,7 @@ import { Noto_Sans_Thai, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
 const sans = Plus_Jakarta_Sans({
-  subsets: ["latin", "latin-ext"],
+  subsets: ["latin"],
   variable: "--font-latin",
 });
 

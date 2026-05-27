@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { isValidTopicId } from "@/lib/ceremony-topics";
+import { ceremonyVideosTopic, isValidTopicId } from "@/lib/ceremony-topics";
+import { ALLOWED_EXTENSIONS, isVideoExt, normalizeExt } from "@/lib/file-types";
 import { emitCeremony } from "@/lib/io-registry";
 import { listFilesForTopic, saveUploadedFile } from "@/lib/storage";
 
@@ -37,6 +38,11 @@ export async function POST(request: Request, ctx: RouteCtx) {
   const buf = Buffer.from(await file.arrayBuffer());
   const originalName = file.name || "upload";
 
+  const ext = normalizeExt(originalName);
+  if (ext && isVideoExt(ext) && topicId !== ceremonyVideosTopic.id) {
+    return NextResponse.json({ error: "VIDEO_TOPIC_ONLY" }, { status: 400 });
+  }
+
   try {
     const record = await saveUploadedFile({
       topicId,
@@ -48,7 +54,7 @@ export async function POST(request: Request, ctx: RouteCtx) {
   } catch (e) {
     if (e instanceof Error && e.message === "INVALID_EXTENSION") {
       return NextResponse.json(
-        { error: "INVALID_EXTENSION", allowed: [".pdf", ".pptx", ".xlsx"] },
+        { error: "INVALID_EXTENSION", allowed: [...ALLOWED_EXTENSIONS] },
         { status: 400 },
       );
     }

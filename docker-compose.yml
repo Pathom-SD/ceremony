@@ -1,0 +1,27 @@
+services:
+  ceremony:
+    build: .
+    ports:
+      - "80:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      LISTEN_HOST: "0.0.0.0"
+      # แปลง Office → PDF ผ่าน Gotenberg (ดู README / ส่วน linuxserver vs Gotenberg)
+      GOTENBERG_URL: http://gotenberg:3000
+      # optional — API ล้างข้อมูล (ดู src/app/api/admin/clear/route.ts)
+      # CEREMONY_CLEAR_SECRET: "your-secret"
+      # ถ้าไม่ใช้ Gotenberg ให้ลบ GOTENBERG_URL แล้วตั้ง LIBREOFFICE_PATH ชี้ไปที่ soffice บนเครื่องที่รันแอป
+      # LIBREOFFICE_PATH: "/usr/bin/soffice"
+    volumes:
+      - ceremony-storage:/app/storage
+    depends_on:
+      - gotenberg
+    restart: unless-stopped
+
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    restart: unless-stopped
+
+volumes:
+  ceremony-storage:

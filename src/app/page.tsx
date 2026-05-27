@@ -1,6 +1,8 @@
 import { CeremonyApp } from "@/components/ceremony-app";
+import { AppPreferencesProvider } from "@/components/app-preferences";
 import {
   ceremonyDepartments,
+  ceremonyVideosTopic,
   lessonLearnedTopic,
 } from "@/lib/ceremony-topics";
 import type { StoredFileRecord } from "@/lib/file-types";
@@ -18,6 +20,7 @@ export default async function Home() {
       department.topics.map((topic) => topic.id),
     ),
     lessonLearnedTopic.id,
+    ceremonyVideosTopic.id,
   ];
   const initialFilesByTopic = Object.fromEntries(
     topicIds.map((topicId) => [
@@ -27,9 +30,11 @@ export default async function Home() {
   ) as Record<string, StoredFileRecord[]>;
 
   return (
-    <CeremonyApp
-      initialSession={initialSession}
-      initialFilesByTopic={initialFilesByTopic}
-    />
+    <AppPreferencesProvider>
+      <CeremonyApp
+        initialSession={initialSession}
+        initialFilesByTopic={initialFilesByTopic}
+      />
+    </AppPreferencesProvider>
   );
 }

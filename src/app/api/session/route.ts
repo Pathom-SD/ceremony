@@ -29,6 +29,24 @@ export async function PUT(request: Request) {
         typeof body.ceremonyDate === "string"
           ? body.ceremonyDate
           : current.ceremonyDate,
+      summaryProject: {
+        quality:
+          typeof body.summaryProject?.quality === "string"
+            ? body.summaryProject.quality
+            : current.summaryProject.quality,
+        price:
+          typeof body.summaryProject?.price === "string"
+            ? body.summaryProject.price
+            : current.summaryProject.price,
+        actual:
+          typeof body.summaryProject?.actual === "string"
+            ? body.summaryProject.actual
+            : current.summaryProject.actual,
+        delivery:
+          typeof body.summaryProject?.delivery === "string"
+            ? body.summaryProject.delivery
+            : current.summaryProject.delivery,
+      },
     };
     await writeSession(next);
     emitCeremony("session:updated", next);

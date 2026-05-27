@@ -1,12 +1,13 @@
 import fs from "node:fs/promises";
 import { NextResponse } from "next/server";
 import { getFileRecord, diskPathFor } from "@/lib/storage";
+import { isStreamableVideo, videoFileResponse } from "@/lib/video-stream";
 
 export const dynamic = "force-dynamic";
 
 type RouteCtx = { params: Promise<{ fileId: string }> };
 
-export async function GET(request: Request, ctx: RouteCtx) {
+async function serveFile(request: Request, ctx: RouteCtx) {
   const { fileId } = await ctx.params;
   const record = await getFileRecord(fileId);
   if (!record) {
@@ -15,10 +16,15 @@ export async function GET(request: Request, ctx: RouteCtx) {
 
   const url = new URL(request.url);
   const preview = url.searchParams.get("preview") === "1";
+  const filePath = diskPathFor(record);
+
+  if (isStreamableVideo(record)) {
+    return videoFileResponse(request, filePath, record, preview);
+  }
 
   let body: Buffer;
   try {
-    body = await fs.readFile(diskPathFor(record));
+    body = await fs.readFile(filePath);
   } catch {
     return NextResponse.json({ error: "FILE_MISSING" }, { status: 404 });
   }
@@ -35,4 +41,12 @@ export async function GET(request: Request, ctx: RouteCtx) {
       "Cache-Control": "private, no-store",
     },
   });
+}
+
+export async function GET(request: Request, ctx: RouteCtx) {
+  return serveFile(request, ctx);
+}
+
+export async function HEAD(request: Request, ctx: RouteCtx) {
+  return serveFile(request, ctx);
 }

@@ -66,9 +66,16 @@ export const lessonLearnedTopic: CeremonyTopic = {
   label: "Lesson Learned & Challenge Points",
 };
 
+/** หัวข้อพิเศษสำหรับวิดีโอห้องประชุม (ใช้เฉพาะลิบรารีวิดีโอแบบ mini player) */
+export const ceremonyVideosTopic: CeremonyTopic = {
+  id: "ceremony-videos",
+  label: "Ceremony videos",
+};
+
 const allTopicIds = new Set<string>([
   ...ceremonyDepartments.flatMap((d) => d.topics.map((t) => t.id)),
   lessonLearnedTopic.id,
+  ceremonyVideosTopic.id,
 ]);
 
 export function isValidTopicId(topicId: string): boolean {

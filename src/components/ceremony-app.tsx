@@ -1,16 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { io, type Socket } from "socket.io-client";
 import type { SessionPayload } from "@/lib/session-types";
 import type { StoredFileRecord } from "@/lib/file-types";
-import { ceremonyDepartments, lessonLearnedTopic } from "@/lib/ceremony-topics";
+import { ceremonyDepartments, ceremonyVideosTopic, lessonLearnedTopic } from "@/lib/ceremony-topics";
 import { SessionHeader } from "./session-header";
 import { DepartmentCard } from "./department-card";
 import { LessonLearnedCard } from "./lesson-learned-card";
 import { TopicModal } from "./topic-modal";
 import { FilePreviewOverlay } from "./file-preview-overlay";
+import { VideoLibraryMini } from "./video-library-mini";
 import { ClearAllControl } from "./clear-all-control";
+import { SummaryProjectCard } from "./summary-project-card";
+import { PreferenceControls, useAppPreferences } from "./app-preferences";
 
 type ModalState =
   | { open: false }
@@ -21,44 +25,19 @@ type ModalState =
       departmentName?: string;
     };
 
-type PreviewState =
-  | { open: false }
-  | { open: true; file: StoredFileRecord };
+type PreviewState = { open: false } | { open: true; file: StoredFileRecord };
 
 type Props = {
   initialSession: SessionPayload;
   initialFilesByTopic: Record<string, StoredFileRecord[]>;
 };
 
-function formatDisplayDate(date: string) {
-  if (!date) return "ยังไม่เลือกวัน";
-  const [year, month, day] = date.split("-");
-  const thaiMonths = [
-    "ม.ค.",
-    "ก.พ.",
-    "มี.ค.",
-    "เม.ย.",
-    "พ.ค.",
-    "มิ.ย.",
-    "ก.ค.",
-    "ส.ค.",
-    "ก.ย.",
-    "ต.ค.",
-    "พ.ย.",
-    "ธ.ค.",
-  ];
-  const monthName = thaiMonths[Number(month) - 1];
-  if (!year || !monthName || !day) return date;
-  return `${day} ${monthName} ${Number(year) + 543}`;
-}
-
 export function CeremonyApp({ initialSession, initialFilesByTopic }: Props) {
+  const { t } = useAppPreferences();
   const [session, setSession] = useState<SessionPayload>(initialSession);
   const [modal, setModal] = useState<ModalState>({ open: false });
   const [preview, setPreview] = useState<PreviewState>({ open: false });
-  const [filesByTopic, setFilesByTopic] = useState<Record<string, StoredFileRecord[]>>(
-    initialFilesByTopic,
-  );
+  const [filesByTopic, setFilesByTopic] = useState<Record<string, StoredFileRecord[]>>(initialFilesByTopic);
 
   const fetchSession = useCallback(async () => {
     const res = await fetch("/api/session", { cache: "no-store" });
@@ -92,6 +71,12 @@ export function CeremonyApp({ initialSession, initialFilesByTopic }: Props) {
         projectNo: "",
         customer: "",
         ceremonyDate: "",
+        summaryProject: {
+          quality: "",
+          price: "",
+          actual: "",
+          delivery: "",
+        },
       });
       setFilesByTopic({});
       setModal({ open: false });
@@ -115,10 +100,7 @@ export function CeremonyApp({ initialSession, initialFilesByTopic }: Props) {
   }, [fetchFiles]);
 
   const topicLookup = useMemo(() => {
-    const map = new Map<
-      string,
-      { label: string; departmentName?: string }
-    >();
+    const map = new Map<string, { label: string; departmentName?: string }>();
     for (const d of ceremonyDepartments) {
       for (const t of d.topics) {
         map.set(t.id, { label: t.label, departmentName: d.name });
@@ -128,22 +110,17 @@ export function CeremonyApp({ initialSession, initialFilesByTopic }: Props) {
       label: lessonLearnedTopic.label,
       departmentName: undefined,
     });
+    map.set(ceremonyVideosTopic.id, {
+      label: ceremonyVideosTopic.label,
+      departmentName: undefined,
+    });
     return map;
   }, []);
 
-  const departmentById = useMemo(
-    () => Object.fromEntries(ceremonyDepartments.map((d) => [d.id, d])),
-    [],
-  );
+  const departmentById = useMemo(() => Object.fromEntries(ceremonyDepartments.map((d) => [d.id, d])), []);
 
   const fileCountsByTopic = useMemo(
-    () =>
-      Object.fromEntries(
-        Object.entries(filesByTopic).map(([topicId, files]) => [
-          topicId,
-          files.length,
-        ]),
-      ),
+    () => Object.fromEntries(Object.entries(filesByTopic).map(([topicId, files]) => [topicId, files.length])),
     [filesByTopic],
   );
 
@@ -160,23 +137,17 @@ export function CeremonyApp({ initialSession, initialFilesByTopic }: Props) {
   };
 
   return (
-    <div className="h-dvh overflow-hidden bg-[var(--ceremony-bg)] text-[var(--ceremony-ink)]">
+    <div className="h-dvh overflow-hidden bg-background text-foreground">
       <div className="mx-auto flex h-full max-w-[1800px] flex-col gap-3 px-3 py-3">
-        <header className="flex min-h-0 shrink-0 flex-col gap-3 rounded-[22px] border border-[var(--ceremony-border)] bg-[color-mix(in_oklab,var(--ceremony-surface)_94%,transparent)] p-3 shadow-[var(--ceremony-shadow)] xl:flex-row xl:items-stretch">
-          <div className="flex min-w-[250px] items-center gap-3 rounded-[18px] bg-[var(--ceremony-surface-2)] px-3 py-2">
-            <div className="grid size-12 place-items-center rounded-2xl bg-[var(--ceremony-primary)] text-sm font-black leading-none text-[var(--ceremony-primary-ink)]">
-              AIT
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--ceremony-muted)]">
-                Ceremony board
+        <header className="flex min-h-0 shrink-0 flex-col gap-3 rounded-[22px] border border-(--ceremony-border) bg-[color-mix(in_oklab,var(--ceremony-surface)_94%,transparent)] p-3 shadow-(--ceremony-shadow) xl:flex-row xl:items-stretch">
+          <div className="flex min-w-[250px] items-center gap-3 rounded-[18px] bg-(--ceremony-surface-2) px-3 py-2">
+            <Image src="/logo.jpg" alt="AIT" width={60} height={60} className="rounded-md" />
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-(--ceremony-muted)">
+                {t("ceremonyBoard")}
               </p>
-              <h1 className="truncate text-xl font-black tracking-[-0.04em] sm:text-2xl">
-                AIT - Ceremony Activity
-              </h1>
-              <p className="truncate text-xs font-medium text-[var(--ceremony-muted)]">
-                ทุกหัวข้อแสดงครบในจอเดียว
-              </p>
+              <h1 className="truncate text-xl font-black tracking-[-0.04em] sm:text-2xl">Ceremony Activity</h1>
+              <PreferenceControls />
             </div>
           </div>
 
@@ -184,22 +155,11 @@ export function CeremonyApp({ initialSession, initialFilesByTopic }: Props) {
             key={JSON.stringify(session)}
             session={session}
             onSaved={setSession}
+            clearSlot={<ClearAllControl triggerVariant="toolbar" onCleared={() => void fetchSession()} />}
           />
 
           <aside className="grid shrink-0 gap-2 sm:grid-cols-2 xl:w-[270px] xl:grid-cols-1">
-            <div className="rounded-[18px] border border-[var(--ceremony-border)] bg-[var(--ceremony-surface-2)] px-3 py-2">
-              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--ceremony-muted)]">
-                Summary
-              </p>
-              <p className="mt-1 truncate text-sm font-extrabold">
-                {session.projectName || "ยังไม่ได้ระบุโปรเจ็กต์"}
-              </p>
-              <p className="truncate text-xs text-[var(--ceremony-muted)]">
-                {session.customer || "ยังไม่ได้ระบุลูกค้า"} ·{" "}
-                {formatDisplayDate(session.ceremonyDate)}
-              </p>
-            </div>
-            <ClearAllControl onCleared={() => void fetchSession()} />
+            <SummaryProjectCard summary={session.summaryProject} onSaved={setSession} />
           </aside>
         </header>
 
@@ -248,7 +208,7 @@ export function CeremonyApp({ initialSession, initialFilesByTopic }: Props) {
           />
           <LessonLearnedCard
             className="col-span-1 row-span-1"
-            hasFiles={(fileCountsByTopic[lessonLearnedTopic.id] ?? 0) > 0}
+            fileCount={fileCountsByTopic[lessonLearnedTopic.id] ?? 0}
             onOpen={() => openTopic(lessonLearnedTopic.id)}
           />
         </main>
@@ -265,12 +225,13 @@ export function CeremonyApp({ initialSession, initialFilesByTopic }: Props) {
           />
         ) : null}
 
-        {preview.open ? (
-          <FilePreviewOverlay
-            file={preview.file}
-            onClose={() => setPreview({ open: false })}
-          />
-        ) : null}
+        {preview.open ? <FilePreviewOverlay file={preview.file} onClose={() => setPreview({ open: false })} /> : null}
+
+        <VideoLibraryMini
+          topicId={ceremonyVideosTopic.id}
+          files={filesByTopic[ceremonyVideosTopic.id] ?? []}
+          onRefresh={() => void fetchFiles(ceremonyVideosTopic.id)}
+        />
       </div>
     </div>
   );
