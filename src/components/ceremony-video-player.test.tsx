@@ -36,6 +36,40 @@ describe("CeremonyVideoPlayer", () => {
     });
   });
 
+  it("keeps volume control visible on narrow viewports", () => {
+    const { container } = render(
+      <CeremonyVideoPlayer
+        file={sampleFile}
+        src="/api/files/vid-1?preview=1"
+        onClose={() => undefined}
+      />,
+    );
+
+    const volume = container.querySelector(".video-volume");
+    expect(volume).not.toBeNull();
+    expect(volume?.className).not.toContain("hidden");
+  });
+
+  it("closes from the backdrop without a close button in the control bar", () => {
+    const onClose = vi.fn();
+    const { container } = render(
+      <CeremonyVideoPlayer
+        file={sampleFile}
+        src="/api/files/vid-1?preview=1"
+        onClose={onClose}
+      />,
+    );
+
+    const controls = container.querySelector("[data-video-player-controls]");
+    expect(controls).not.toBeNull();
+    expect(controls?.querySelector('button[aria-label="close"]')).toBeNull();
+
+    const backdrop = container.querySelector("[data-video-player-backdrop]");
+    expect(backdrop).not.toBeNull();
+    fireEvent.click(backdrop!);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it("renders a dark scrim behind the centered player", () => {
     const { container } = render(
       <CeremonyVideoPlayer

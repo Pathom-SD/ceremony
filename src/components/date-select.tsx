@@ -154,7 +154,7 @@ export function DateSelect({ label, value, onChange, placement = "bottom", compa
 
         {open ? (
           <div
-            className={`absolute left-0 z-80 w-full min-w-[320px] rounded-[22px] border border-(--ceremony-border) bg-(--ceremony-surface) p-3 shadow-2xl ${popupPosition}`}
+            className={`absolute left-0 z-80 w-full min-w-0 max-w-[min(100vw-1.5rem,20rem)] rounded-[22px] border border-(--ceremony-border) bg-(--ceremony-surface) p-3 shadow-2xl sm:min-w-[280px] ${popupPosition}`}
           >
             <div className="mb-3 flex items-center justify-between gap-2">
               <button

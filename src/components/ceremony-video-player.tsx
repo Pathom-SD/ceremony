@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Maximize, Minimize, Pause, Play, Volume2, VolumeX, X } from "lucide-react";
+import { Maximize, Minimize, Pause, Play, Volume2, VolumeX } from "lucide-react";
 import type { StoredFileRecord } from "@/lib/file-types";
 import { useAppPreferences } from "./app-preferences";
 
@@ -209,7 +209,7 @@ export function CeremonyVideoPlayer({ file, src, onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-[95] flex items-center justify-center p-4 sm:p-8"
+      className="fixed inset-0 z-[95] flex items-center justify-center p-2 sm:p-6 lg:p-8"
       role="dialog"
       aria-modal="true"
       aria-label={t("videoPlayer")}
@@ -241,7 +241,7 @@ export function CeremonyVideoPlayer({ file, src, onClose }: Props) {
             ref={videoRef}
             key={src}
             src={src}
-            className={`w-full bg-black object-contain ${isFullscreen ? "h-full max-h-none" : "max-h-[min(78vh,calc(92vw*9/16))]"}`}
+            className={`w-full bg-black object-contain ${isFullscreen ? "h-full max-h-none" : "max-h-[min(72dvh,calc(100vw*9/16))] sm:max-h-[min(78vh,calc(92vw*9/16))]"}`}
             playsInline
             preload="auto"
             onClick={togglePlay}
@@ -291,14 +291,14 @@ export function CeremonyVideoPlayer({ file, src, onClose }: Props) {
 
           <div
             data-video-player-controls
-            className={`pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-[oklch(0_0_0/0.88)] via-[oklch(0_0_0/0.45)] to-transparent px-4 pb-4 pt-16 transition-opacity duration-300 ${
+            className={`pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-[oklch(0_0_0/0.88)] via-[oklch(0_0_0/0.45)] to-transparent px-3 pb-3 pt-12 transition-opacity duration-300 sm:px-4 sm:pb-4 sm:pt-16 ${
               controlsVisible ? "opacity-100" : "opacity-0"
             }`}
           >
             <div className="pointer-events-auto space-y-3">
               <p className="truncate pr-2 text-sm font-bold text-white drop-shadow-sm">{file.originalName}</p>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                 <input
                   type="range"
                   min={0}
@@ -306,13 +306,13 @@ export function CeremonyVideoPlayer({ file, src, onClose }: Props) {
                   step={0.1}
                   value={Math.min(currentTime, duration || 0)}
                   onChange={(e) => onSeekInput(Number(e.target.value))}
-                  className="video-seek h-1.5 min-w-0 flex-1 cursor-pointer appearance-none rounded-full bg-[oklch(1_0_0/0.25)] accent-(--ceremony-primary)"
+                  className="video-seek h-1.5 min-w-0 w-full flex-1 cursor-pointer appearance-none rounded-full bg-[oklch(1_0_0/0.25)] accent-(--ceremony-primary)"
                   aria-label={t("videoSeek")}
                   aria-valuemin={0}
                   aria-valuemax={duration}
                   aria-valuenow={currentTime}
                 />
-                <span className="shrink-0 tabular-nums text-[11px] font-bold text-white/85">
+                <span className="shrink-0 self-end tabular-nums text-[10px] font-bold text-white/85 sm:self-auto sm:text-[11px]">
                   {formatTime(currentTime)} / {formatTime(duration)}
                 </span>
               </div>
@@ -351,7 +351,7 @@ export function CeremonyVideoPlayer({ file, src, onClose }: Props) {
                     step={0.05}
                     value={muted ? 0 : volume}
                     onChange={(e) => onVolumeInput(Number(e.target.value))}
-                    className="video-volume hidden h-1.5 w-24 max-w-[6rem] cursor-pointer appearance-none rounded-full bg-[oklch(1_0_0/0.25)] accent-(--ceremony-primary) sm:block"
+                    className="video-volume h-1.5 w-16 max-w-[4.5rem] shrink-0 cursor-pointer appearance-none rounded-full bg-[oklch(1_0_0/0.25)] accent-(--ceremony-primary) sm:w-24 sm:max-w-[6rem]"
                     aria-label={t("videoVolume")}
                   />
                 </div>
@@ -367,15 +367,6 @@ export function CeremonyVideoPlayer({ file, src, onClose }: Props) {
                   ) : (
                     <Maximize className="size-5" strokeWidth={2.25} />
                   )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="grid size-10 place-items-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
-                  aria-label={t("close")}
-                >
-                  <X className="size-5" strokeWidth={2.5} />
                 </button>
               </div>
             </div>

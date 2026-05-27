@@ -50,6 +50,7 @@ describe("VideoLibraryMini", () => {
     expect(panel?.className).toContain("top-0");
     expect(panel?.className).toContain("right-0");
     expect(panel?.className).toContain("h-dvh");
+    expect(panel?.className).toContain("w-full");
     expect(panel?.className).not.toContain("bottom-[4.75rem]");
   });
 
@@ -225,6 +226,31 @@ describe("VideoLibraryMini", () => {
 
     fireEvent.click(moreBtn!);
     expect(container.querySelector('[role="menu"]')).not.toBeNull();
+  });
+
+  it("uses a responsive video thumbnail grid", () => {
+    const files = [
+      {
+        id: "v1",
+        topicId: "ceremony-videos",
+        originalName: "clip.mp4",
+        ext: ".mp4",
+        mime: "video/mp4",
+        size: 100,
+        uploadedAt: "2026-01-01T00:00:00.000Z",
+      },
+    ];
+
+    const { container } = render(
+      <VideoLibraryMini topicId="ceremony-videos" files={files} onRefresh={() => undefined} />,
+    );
+
+    fireEvent.click(container.querySelector('button[aria-label="toggleVideoPanel"]')!);
+
+    const grid = container.querySelector("[data-video-library-grid]");
+    expect(grid).not.toBeNull();
+    expect(grid?.className).toContain("grid-cols-1");
+    expect(grid?.className).toContain("sm:grid-cols-2");
   });
 
   it("closes the more menu when clicking elsewhere in the video panel", () => {

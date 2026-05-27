@@ -113,7 +113,7 @@ export function TopicModal({
           </button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 border-b border-(--ceremony-border) bg-(--ceremony-surface-2) px-5 py-4 sm:px-6">
+        <div className="flex flex-col gap-3 border-b border-(--ceremony-border) bg-(--ceremony-surface-2) px-4 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:px-6">
           <input
             ref={inputRef}
             type="file"
@@ -130,7 +130,7 @@ export function TopicModal({
           >
             {uploading ? t("uploading") : t("upload")}
           </button>
-          <span className="text-xs text-(--ceremony-muted)">
+          <span className="text-xs leading-relaxed text-(--ceremony-muted)">
             {t("uploadHint")}
           </span>
         </div>

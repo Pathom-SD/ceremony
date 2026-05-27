@@ -298,7 +298,7 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
           className={
             libraryExpanded
               ? "fixed inset-0 z-[90] flex h-full w-full min-h-0 flex-col overflow-hidden border border-(--ceremony-border) bg-(--ceremony-surface) shadow-[0_22px_50px_-20px_oklch(0.2_0.05_255/0.55)]"
-              : `fixed right-0 top-0 z-[90] flex h-dvh w-[min(100vw,420px)] min-h-0 flex-col overflow-hidden rounded-none border-l border-(--ceremony-border) bg-(--ceremony-surface) shadow-[-20px_0_50px_-22px_oklch(0.2_0.05_255/0.55)] transition-transform duration-300 ease-out ${panelEntered ? "translate-x-0" : "translate-x-full"}`
+              : `fixed right-0 top-0 z-[90] flex h-dvh w-full max-w-[420px] min-h-0 flex-col overflow-hidden rounded-none border-l border-(--ceremony-border) bg-(--ceremony-surface) shadow-[-20px_0_50px_-22px_oklch(0.2_0.05_255/0.55)] transition-transform duration-300 ease-out ${panelEntered ? "translate-x-0" : "translate-x-full"}`
           }
           role="dialog"
           aria-label={t("videoLibrary")}
@@ -398,7 +398,7 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
               {videos.length === 0 ? (
                 <p className="py-8 text-center text-sm text-(--ceremony-muted)">{t("noVideosYet")}</p>
               ) : (
-                <div className="grid grid-cols-2 gap-2.5">
+                <div data-video-library-grid className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                   {videos.map((file) => {
                     const thumbSrc = `/api/files/${file.id}?preview=1`;
                     const isPlaying = activePlayingFile?.id === file.id;
@@ -579,7 +579,7 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
       <button
         type="button"
         onClick={togglePanel}
-        className="fixed right-4 top-4 z-40 grid size-12 place-items-center rounded-full bg-(--ceremony-primary) text-(--ceremony-primary-ink) shadow-[0_12px_32px_-8px_oklch(0.35_0.12_255/0.5)] transition hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0"
+        className="fixed right-3 top-3 z-40 grid size-11 place-items-center rounded-full bg-(--ceremony-primary) text-(--ceremony-primary-ink) shadow-[0_12px_32px_-8px_oklch(0.35_0.12_255/0.5)] transition hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 sm:right-4 sm:top-4 sm:size-12"
         aria-expanded={panelOpen}
         aria-label={t("toggleVideoPanel")}
       >

@@ -137,10 +137,16 @@ export function CeremonyApp({ initialSession, initialFilesByTopic }: Props) {
   };
 
   return (
-    <div className="h-dvh overflow-hidden bg-background text-foreground">
-      <div className="mx-auto flex h-full max-w-[1800px] flex-col gap-3 px-3 py-3">
-        <header className="flex min-h-0 shrink-0 flex-col gap-3 rounded-[22px] border border-(--ceremony-border) bg-[color-mix(in_oklab,var(--ceremony-surface)_94%,transparent)] p-3 shadow-(--ceremony-shadow) xl:flex-row xl:items-stretch">
-          <div className="flex min-w-[250px] items-center gap-3 rounded-[18px] bg-(--ceremony-surface-2) px-3 py-2">
+    <div
+      data-ceremony-shell
+      className="h-dvh overflow-y-auto overscroll-y-contain bg-background text-foreground xl:overflow-hidden"
+    >
+      <div className="mx-auto flex min-h-full max-w-[1800px] flex-col gap-3 px-3 py-3 sm:px-4 xl:h-full xl:min-h-0">
+        <header
+          data-ceremony-header
+          className="flex min-h-0 shrink-0 flex-col gap-3 rounded-[22px] border border-(--ceremony-border) bg-[color-mix(in_oklab,var(--ceremony-surface)_94%,transparent)] p-3 shadow-(--ceremony-shadow) xl:flex-row xl:items-stretch"
+        >
+          <div className="flex w-full min-w-0 items-center gap-3 rounded-[18px] bg-(--ceremony-surface-2) px-3 py-2 xl:min-w-[250px] xl:w-auto">
             <Image src="/logo.jpg" alt="AIT" width={60} height={60} className="rounded-md" />
             <div className="min-w-0 flex-1">
               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-(--ceremony-muted)">
@@ -158,56 +164,59 @@ export function CeremonyApp({ initialSession, initialFilesByTopic }: Props) {
             clearSlot={<ClearAllControl triggerVariant="toolbar" onCleared={() => void fetchSession()} />}
           />
 
-          <aside className="grid shrink-0 gap-2 sm:grid-cols-2 xl:w-[270px] xl:grid-cols-1">
+          <aside className="grid w-full min-w-0 shrink-0 gap-2 sm:grid-cols-2 xl:w-[270px] xl:grid-cols-1">
             <SummaryProjectCard summary={session.summaryProject} onSaved={setSession} />
           </aside>
         </header>
 
-        <main className="grid min-h-0 flex-1 grid-cols-5 grid-rows-2 gap-2">
+        <main
+          data-ceremony-board
+          className="grid flex-1 auto-rows-min grid-cols-1 gap-2 pb-1 xl:min-h-0 xl:grid-cols-5 xl:grid-rows-2 xl:overflow-hidden xl:pb-0"
+        >
           <DepartmentCard
             department={departmentById.mk}
             onOpenTopic={openTopic}
             fileCountsByTopic={fileCountsByTopic}
-            className="col-span-1 row-span-1"
-            topicsClassName="grid-cols-1 grid-rows-2"
+            className="min-h-[200px] xl:col-span-1 xl:row-span-1 xl:min-h-0"
+            topicsClassName="grid-cols-2 grid-rows-1 xl:grid-cols-1 xl:grid-rows-2"
           />
           <DepartmentCard
             department={departmentById.med}
             onOpenTopic={openTopic}
             fileCountsByTopic={fileCountsByTopic}
-            className="col-span-2 row-span-1"
+            className="min-h-[220px] xl:col-span-2 xl:row-span-1 xl:min-h-0"
             topicsClassName="grid-cols-2 grid-rows-2"
           />
           <DepartmentCard
             department={departmentById.mep}
             onOpenTopic={openTopic}
             fileCountsByTopic={fileCountsByTopic}
-            className="col-span-1 row-span-1"
-            topicsClassName="grid-cols-1 grid-rows-3"
+            className="min-h-[240px] xl:col-span-1 xl:row-span-1 xl:min-h-0"
+            topicsClassName="grid-cols-1 grid-rows-3 sm:grid-cols-3 sm:grid-rows-1 xl:grid-cols-1 xl:grid-rows-3"
           />
           <DepartmentCard
             department={departmentById.ee}
             onOpenTopic={openTopic}
             fileCountsByTopic={fileCountsByTopic}
-            className="col-span-1 row-span-1"
+            className="min-h-[120px] xl:col-span-1 xl:row-span-1 xl:min-h-0"
             topicsClassName="grid-cols-1 grid-rows-1"
           />
           <DepartmentCard
             department={departmentById.qc}
             onOpenTopic={openTopic}
             fileCountsByTopic={fileCountsByTopic}
-            className="col-span-1 row-span-1"
+            className="min-h-[120px] xl:col-span-1 xl:row-span-1 xl:min-h-0"
             topicsClassName="grid-cols-1 grid-rows-1"
           />
           <DepartmentCard
             department={departmentById.pe}
             onOpenTopic={openTopic}
             fileCountsByTopic={fileCountsByTopic}
-            className="col-span-3 row-span-1"
-            topicsClassName="grid-cols-3 grid-rows-1"
+            className="min-h-[140px] xl:col-span-3 xl:row-span-1 xl:min-h-0"
+            topicsClassName="grid-cols-1 grid-rows-3 sm:grid-cols-3 sm:grid-rows-1"
           />
           <LessonLearnedCard
-            className="col-span-1 row-span-1"
+            className="min-h-[120px] xl:col-span-1 xl:row-span-1 xl:min-h-0"
             fileCount={fileCountsByTopic[lessonLearnedTopic.id] ?? 0}
             onOpen={() => openTopic(lessonLearnedTopic.id)}
           />
