@@ -2,9 +2,15 @@ import { NextResponse } from "next/server";
 import { ceremonyVideosTopic, isValidTopicId } from "@/lib/ceremony-topics";
 import { ALLOWED_EXTENSIONS, isVideoExt, normalizeExt } from "@/lib/file-types";
 import { emitCeremony } from "@/lib/io-registry";
-import { listFilesForTopic, saveUploadedFile } from "@/lib/storage";
+import { receiveMultipartFileUpload } from "@/lib/multipart-upload";
+import {
+  getMaxUploadBytesForTopic,
+  isUploadTooLarge,
+} from "@/lib/upload-limits";
+import { listFilesForTopic, saveUploadedFileFromPath } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 type RouteCtx = { params: Promise<{ topicId: string }> };
 
@@ -23,31 +29,36 @@ export async function POST(request: Request, ctx: RouteCtx) {
     return NextResponse.json({ error: "UNKNOWN_TOPIC" }, { status: 404 });
   }
 
-  let formData: FormData;
-  try {
-    formData = await request.formData();
-  } catch {
-    return NextResponse.json({ error: "BAD_FORM" }, { status: 400 });
+  const contentLength = Number(request.headers.get("content-length") ?? 0);
+  if (contentLength > 0 && isUploadTooLarge(topicId, contentLength)) {
+    return NextResponse.json({ error: "FILE_TOO_LARGE" }, { status: 413 });
   }
 
-  const file = formData.get("file");
-  if (!(file instanceof File)) {
-    return NextResponse.json({ error: "FILE_REQUIRED" }, { status: 400 });
+  const maxFileBytes = getMaxUploadBytesForTopic(topicId);
+  const uploaded = await receiveMultipartFileUpload(request, { maxFileBytes });
+
+  if (!uploaded.ok) {
+    const status =
+      uploaded.error === "FILE_TOO_LARGE"
+        ? 413
+        : uploaded.error === "FILE_REQUIRED"
+          ? 400
+          : 400;
+    return NextResponse.json({ error: uploaded.error }, { status });
   }
 
-  const buf = Buffer.from(await file.arrayBuffer());
-  const originalName = file.name || "upload";
-
+  const originalName = uploaded.filename || "upload";
   const ext = normalizeExt(originalName);
   if (ext && isVideoExt(ext) && topicId !== ceremonyVideosTopic.id) {
     return NextResponse.json({ error: "VIDEO_TOPIC_ONLY" }, { status: 400 });
   }
 
   try {
-    const record = await saveUploadedFile({
+    const record = await saveUploadedFileFromPath({
       topicId,
       originalName,
-      buffer: buf,
+      sourcePath: uploaded.tempPath,
+      size: uploaded.size,
     });
     emitCeremony("files:changed", { topicId });
     return NextResponse.json({ file: record });

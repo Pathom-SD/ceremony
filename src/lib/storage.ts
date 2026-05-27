@@ -104,6 +104,38 @@ export async function saveUploadedFile(params: {
   return record;
 }
 
+export async function saveUploadedFileFromPath(params: {
+  topicId: string;
+  originalName: string;
+  sourcePath: string;
+  size: number;
+}): Promise<StoredFileRecord> {
+  const ext = normalizeExt(params.originalName);
+  if (!ext) {
+    throw new Error("INVALID_EXTENSION");
+  }
+
+  const id = randomUUID();
+  const record: StoredFileRecord = {
+    id,
+    topicId: params.topicId,
+    originalName: sanitizeOriginalName(params.originalName),
+    ext,
+    mime: mimeForExt(ext),
+    size: params.size,
+    uploadedAt: new Date().toISOString(),
+  };
+
+  const dir = path.join(UPLOADS_DIR, params.topicId);
+  await ensureDir(dir);
+  await fs.rename(params.sourcePath, diskPathFor(record));
+
+  const index = await readFileIndex();
+  index.files.push(record);
+  await writeFileIndex(index);
+  return record;
+}
+
 export async function deleteFileRecord(fileId: string): Promise<boolean> {
   const index = await readFileIndex();
   const idx = index.files.findIndex((f) => f.id === fileId);

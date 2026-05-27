@@ -20,6 +20,7 @@ export default defineConfig({
     environmentMatchGlobs: [
       ["src/lib/**/*.test.ts", "node"],
       ["src/lib/**/*.test.tsx", "node"],
+      ["src/app/api/**/*.test.ts", "node"],
     ],
   } as unknown as { environment: string },
 });

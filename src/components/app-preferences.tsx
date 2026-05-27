@@ -10,6 +10,7 @@ const translations = {
     actual: "Actual",
     assemblyCheck: "Assembly Check",
     cancel: "ยกเลิก",
+    cancelUpload: "ยกเลิกการอัปโหลด",
     ceremonyBoard: "Ceremony board",
     ceremonyDate: "Ceremony Date",
     clear: "Clear",
@@ -67,6 +68,7 @@ const translations = {
     uploadVideoTopicOnly: "อัปโหลดวิดีโอได้เฉพาะในหน้าต่างวิดีโอเท่านั้น ไม่สามารถอัปโหลดในหัวข้อแผนก",
     uploadInvalidVideo:
       "รองรับเฉพาะไฟล์วิดีโอ เช่น .mp4, .webm, .mkv, .mov, .avi, .m4v, .ogg/.ogv — บางรูปแบบอาจเล่นในเบราว์เซอร์ไม่ได้ขึ้นกับ codec",
+    uploadVideoTooLarge: "ไฟล์วิดีโอใหญ่เกิน 5 GB",
     confirmClear: "ยืนยันการเคลียร์",
     confirmClearDescription:
       "จะลบข้อมูลโปรเจ็กต์ในหัวข้อด้านบนและไฟล์ที่อัปโหลดทั้งหมด การกระทำนี้ใช้สำหรับเริ่มประชุมครั้งใหม่",
@@ -103,6 +105,9 @@ const translations = {
     newFileName: "ชื่อที่แสดง",
     renameFailed: "เปลี่ยนชื่อไม่สำเร็จ",
     confirmDeleteVideo: "ลบวิดีโอนี้หรือไม่?",
+    confirmDeleteVideoDescription: "ไฟล์จะถูกลบถาวรจากคลังวิดีโอ",
+    confirmDeleteVideoAction: "ลบวิดีโอ",
+    deletingVideo: "กำลังลบ…",
     loadingVideo: "กำลังโหลดวิดีโอ…",
     videoPlayError: "เล่นวิดีโอไม่สำเร็จ",
     videoPlayer: "เล่นวิดีโอ",
@@ -122,6 +127,7 @@ const translations = {
     actual: "Actual",
     assemblyCheck: "Assembly Check",
     cancel: "Cancel",
+    cancelUpload: "Cancel upload",
     ceremonyBoard: "Ceremony board",
     ceremonyDate: "Ceremony Date",
     clear: "Clear",
@@ -180,6 +186,7 @@ const translations = {
       "Video uploads are only allowed in the video library panel, not in department topics",
     uploadInvalidVideo:
       "Only video files are supported here, e.g. .mp4, .webm, .mkv, .mov, .avi, .m4v, .ogg/.ogv — playback depends on browser and codecs",
+    uploadVideoTooLarge: "Video file exceeds the 5 GB limit",
     confirmClear: "Confirm clear",
     confirmClearDescription:
       "This will delete project info and all uploaded files. Use this to start the next meeting.",
@@ -216,6 +223,9 @@ const translations = {
     newFileName: "Display name",
     renameFailed: "Could not rename",
     confirmDeleteVideo: "Delete this video?",
+    confirmDeleteVideoDescription: "The file will be permanently removed from the video library.",
+    confirmDeleteVideoAction: "Delete video",
+    deletingVideo: "Deleting...",
     loadingVideo: "Loading video...",
     videoPlayError: "Could not play video",
     videoPlayer: "Video player",

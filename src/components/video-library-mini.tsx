@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Maximize2, Minimize2, MoreVertical, Play, Upload, X } from "lucide-react";
 import type { StoredFileRecord } from "@/lib/file-types";
 import { isVideoExt, VIDEO_EXTENSIONS } from "@/lib/file-types";
+import { startFormUpload, UPLOAD_ABORTED } from "@/lib/form-upload";
 import { CeremonyVideoPlayer } from "./ceremony-video-player";
 import { useAppPreferences } from "./app-preferences";
 
@@ -24,34 +25,6 @@ type UploadProgressState = {
   fileName: string;
 };
 
-function postFormUploadWithProgress(
-  url: string,
-  formData: FormData,
-  onUploadProgress: (loaded: number, total: number, lengthComputable: boolean) => void,
-): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", url);
-    xhr.upload.onprogress = (ev) => {
-      onUploadProgress(ev.loaded, ev.total, ev.lengthComputable);
-    };
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        resolve();
-        return;
-      }
-      try {
-        const j = JSON.parse(xhr.responseText) as { error?: string };
-        reject(new Error(j.error ?? "UPLOAD_FAILED"));
-      } catch {
-        reject(new Error("UPLOAD_FAILED"));
-      }
-    };
-    xhr.onerror = () => reject(new Error("UPLOAD_FAILED"));
-    xhr.send(formData);
-  });
-}
-
 type Props = {
   topicId: string;
   files: StoredFileRecord[];
@@ -62,6 +35,7 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
   const { t } = useAppPreferences();
   const topicIdRef = useRef(topicId);
   const inputRef = useRef<HTMLInputElement>(null);
+  const uploadAbortRef = useRef<(() => void) | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [libraryExpanded, setLibraryExpanded] = useState(false);
@@ -73,6 +47,7 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
   const [menu, setMenu] = useState<MenuState | null>(null);
   const [renameTarget, setRenameTarget] = useState<StoredFileRecord | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<StoredFileRecord | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<UploadProgressState | null>(null);
@@ -129,9 +104,9 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
     if (!menu) return;
     const onDoc = (e: MouseEvent) => {
       const el = e.target;
-      if (!(el instanceof Node)) return;
-      if (panelRef.current?.contains(el)) return;
+      if (!(el instanceof Element)) return;
       if (menuRef.current?.contains(el)) return;
+      if (el.closest("[data-more-actions]")) return;
       setMenu(null);
     };
     document.addEventListener("mousedown", onDoc);
@@ -140,6 +115,10 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
 
   const activePlayingFile =
     playingFile && videos.some((v) => v.id === playingFile.id) ? playingFile : null;
+
+  const cancelUpload = useCallback(() => {
+    uploadAbortRef.current?.();
+  }, []);
 
   const upload = async (list: FileList | null) => {
     if (!list?.length) return;
@@ -169,34 +148,48 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
         );
         const fd = new FormData();
         fd.set("file", file);
-        await postFormUploadWithProgress(`/api/topics/${topicId}/files`, fd, (loaded, total, computable) => {
-          let pct: number;
-          if (computable && total > 0) {
-            pct = Math.min(99, Math.round(((completedBytes + loaded) / totalBytes) * 100));
-          } else {
-            const slice = 100 / fileArr.length;
-            pct = Math.min(99, Math.round(i * slice + slice * 0.5));
-          }
-          setUploadProgress((p) =>
-            p
-              ? {
-                  ...p,
-                  fileIndex: i,
-                  fileName: file.name,
-                  percent: pct,
-                }
-              : null,
-          );
-        });
+        const { promise, abort } = startFormUpload(
+          `/api/topics/${topicId}/files`,
+          fd,
+          (loaded, total, computable) => {
+            let pct: number;
+            if (computable && total > 0) {
+              pct = Math.min(99, Math.round(((completedBytes + loaded) / totalBytes) * 100));
+            } else {
+              const slice = 100 / fileArr.length;
+              pct = Math.min(99, Math.round(i * slice + slice * 0.5));
+            }
+            setUploadProgress((p) =>
+              p
+                ? {
+                    ...p,
+                    fileIndex: i,
+                    fileName: file.name,
+                    percent: pct,
+                  }
+                : null,
+            );
+          },
+        );
+        uploadAbortRef.current = abort;
+        try {
+          await promise;
+        } finally {
+          uploadAbortRef.current = null;
+        }
         completedBytes += file.size;
       }
       setUploadProgress((p) => (p ? { ...p, percent: 100 } : null));
       onRefresh();
     } catch (e) {
+      const code = e instanceof Error ? e.message : "";
+      if (code === UPLOAD_ABORTED) return;
       setError(
-        e instanceof Error && e.message === "INVALID_EXTENSION"
+        code === "INVALID_EXTENSION"
           ? t("uploadInvalidVideo")
-          : t("uploadFailed"),
+          : code === "FILE_TOO_LARGE"
+            ? t("uploadVideoTooLarge")
+            : t("uploadFailed"),
       );
     } finally {
       setBusy(false);
@@ -205,17 +198,30 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
     }
   };
 
-  const removeVideo = async (file: StoredFileRecord) => {
-    if (!window.confirm(t("confirmDeleteVideo"))) return;
+  const requestDeleteVideo = (file: StoredFileRecord) => {
     setMenu(null);
+    setDeleteTarget(file);
+  };
+
+  const closeDeleteDialog = () => {
+    if (busy) return;
+    setDeleteTarget(null);
+  };
+
+  const confirmDeleteVideo = async () => {
+    if (!deleteTarget) return;
+    const file = deleteTarget;
+    setBusy(true);
     setError(null);
     const res = await fetch(`/api/topics/${topicId}/files/${file.id}`, {
       method: "DELETE",
     });
+    setBusy(false);
     if (!res.ok) {
       setError(t("removeFailed"));
       return;
     }
+    setDeleteTarget(null);
     if (playingFile?.id === file.id) setPlayingFile(null);
     onRefresh();
   };
@@ -246,8 +252,12 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
     onRefresh();
   };
 
-  const openMenu = (e: React.MouseEvent, file: StoredFileRecord) => {
+  const toggleMoreMenu = (e: React.MouseEvent, file: StoredFileRecord) => {
     e.stopPropagation();
+    if (menu?.file.id === file.id) {
+      setMenu(null);
+      return;
+    }
     const r = e.currentTarget.getBoundingClientRect();
     const menuWidth = 148;
     setMenu({
@@ -342,7 +352,17 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
             <div className="shrink-0 border-b border-(--ceremony-border) bg-(--ceremony-surface-2) px-3 py-2.5">
               <div className="mb-1 flex items-center justify-between gap-2 text-[11px] font-bold text-(--ceremony-ink)">
                 <span className="min-w-0 truncate">{t("uploading")}</span>
-                <span className="shrink-0 tabular-nums text-(--ceremony-muted)">{uploadProgress.percent}%</span>
+                <div className="flex shrink-0 items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={cancelUpload}
+                    aria-label={t("cancelUpload")}
+                    className="rounded-full px-2 py-0.5 text-[10px] font-bold text-(--ceremony-muted) transition hover:bg-(--ceremony-surface) hover:text-(--ceremony-ink)"
+                  >
+                    {t("cancel")}
+                  </button>
+                  <span className="tabular-nums text-(--ceremony-muted)">{uploadProgress.percent}%</span>
+                </div>
               </div>
               <p className="mb-2 truncate text-[10px] font-medium text-(--ceremony-muted)" title={uploadProgress.fileName}>
                 {uploadProgress.fileName}
@@ -415,7 +435,9 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
                           </div>
                           <button
                             type="button"
-                            onClick={(e) => openMenu(e, file)}
+                            data-more-actions=""
+                            onClick={(e) => toggleMoreMenu(e, file)}
+                            aria-expanded={menu?.file.id === file.id}
                             className="absolute right-1.5 top-1.5 z-10 grid size-8 place-items-center rounded-full bg-[oklch(0_0_0/0.55)] text-white backdrop-blur-sm transition hover:bg-[oklch(0_0_0/0.72)]"
                             aria-label={t("moreActions")}
                           >
@@ -432,6 +454,55 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
               )}
             </div>
           </div>
+
+          {deleteTarget ? (
+            <div
+              className="absolute inset-0 z-20 flex items-end justify-center bg-[oklch(0.12_0.03_255/0.45)] p-3 backdrop-blur-[2px] sm:items-center"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="delete-video-title"
+              onClick={closeDeleteDialog}
+            >
+              <div
+                className="w-full max-w-[320px] rounded-2xl border border-(--ceremony-border) bg-(--ceremony-surface) p-4 shadow-xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3
+                  id="delete-video-title"
+                  className="text-sm font-bold text-(--ceremony-danger)"
+                >
+                  {t("confirmDeleteVideo")}
+                </h3>
+                <p className="mt-2 text-xs leading-relaxed text-(--ceremony-muted)">
+                  {t("confirmDeleteVideoDescription")}
+                </p>
+                <p
+                  className="mt-2 truncate text-xs font-semibold text-(--ceremony-ink)"
+                  title={deleteTarget.originalName}
+                >
+                  {deleteTarget.originalName}
+                </p>
+                <div className="mt-4 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={closeDeleteDialog}
+                    className="rounded-full px-4 py-2 text-sm font-bold text-(--ceremony-muted) hover:bg-(--ceremony-surface-2) disabled:opacity-50"
+                  >
+                    {t("cancel")}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void confirmDeleteVideo()}
+                    className="rounded-full bg-(--ceremony-danger) px-4 py-2 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+                  >
+                    {busy ? t("deletingVideo") : t("confirmDeleteVideoAction")}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
 
           {renameTarget ? (
             <div
@@ -498,7 +569,7 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
             type="button"
             role="menuitem"
             className="flex w-full px-3 py-2.5 text-left text-sm font-semibold text-(--ceremony-danger) hover:bg-(--ceremony-danger-soft)"
-            onClick={() => void removeVideo(menu.file)}
+            onClick={() => requestDeleteVideo(menu.file)}
           >
             {t("remove")}
           </button>
