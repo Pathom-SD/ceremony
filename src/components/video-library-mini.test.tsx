@@ -47,6 +47,22 @@ describe("VideoLibraryMini", () => {
     expect(panel?.className).not.toContain("bottom-[4.75rem]");
   });
 
+  it("keeps the video toggle below topic and confirm modal backdrops", () => {
+    const { container } = render(
+      <VideoLibraryMini
+        topicId="ceremony-videos"
+        files={[]}
+        onRefresh={() => undefined}
+      />,
+    );
+
+    const toggleBtn = container.querySelector('button[aria-label="toggleVideoPanel"]');
+    expect(toggleBtn).not.toBeNull();
+    // TopicModal overlay is z-50; clear/summary backdrops are z-70
+    expect(toggleBtn?.className).toContain("z-40");
+    expect(toggleBtn?.className).not.toMatch(/z-\[(5\d|[6-9]\d|\d{3,})\]/);
+  });
+
   it("keeps the toggle button behind the sheet and animates slide-in from the right", () => {
     const { container } = render(
       <VideoLibraryMini
@@ -66,8 +82,8 @@ describe("VideoLibraryMini", () => {
     // initial render starts off-screen, then transitions to on-screen
     expect(panel?.className).toContain("translate-x-full");
 
-    // button should be behind (lower z-index) when sheet is open
-    expect(toggleBtn?.className).toContain("z-[80]");
+    // button stays below the sheet (z-90) and modal overlays (z-50+)
+    expect(toggleBtn?.className).toContain("z-40");
     expect(panel?.className).toContain("z-[90]");
   });
 

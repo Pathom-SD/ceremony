@@ -51,7 +51,7 @@ docker compose up --build -d
 - **Volume**: `docker-compose.yml` แมป volume ชื่อ `ceremony-storage` ไปที่ `/app/storage` เพื่อให้ session, ดัชนีไฟล์ และไฟล์อัปโหลดคงอยู่หลังรีสตาร์ทคอนเทนเนอร์
 - **Gotenberg**: มี service `gotenberg` (รูป `gotenberg/gotenberg:8`) และตั้ง **`GOTENBERG_URL=http://gotenberg:3000`** ให้ `ceremony` แปลง Office→PDF อัตโนมัติ (อยู่ network เดียวกัน ไม่จำเป็นต้อง publish พอร์ต Gotenberg ออก host)
 - **พอร์ต / bind**: ค่าเริ่มต้นคือ `PORT=3000`, `LISTEN_HOST=0.0.0.0` (ปรับใน `environment` ของ compose ได้)
-- **ตัวแปรสภาพแวดล้อมอื่นๆ**: เช่น `CEREMONY_CLEAR_SECRET` — ถ้าไม่ใช้ Gotenberg ให้ลบ `GOTENBERG_URL` ออกจาก compose แล้วตั้ง `LIBREOFFICE_PATH` บน image/เครื่องที่รัน `ceremony` (ต้องมี binary `soffice` จริงใน container/host)
+- **ตัวแปรสภาพแวดล้อมอื่นๆ**: ถ้าไม่ใช้ Gotenberg ให้ลบ `GOTENBERG_URL` ออกจาก compose แล้วตั้ง `LIBREOFFICE_PATH` บน image/เครื่องที่รัน `ceremony` (ต้องมี binary `soffice` จริงใน container/host)
 - **Reverse proxy**: ถ้าวางหลัง Nginx/Caddy/Traefik ต้องเปิด WebSocket และ proxy path `/socket.io/` ให้ถึงแอป ไม่งั้นรายการไฟล์อาจไม่อัปเดตแบบเรียลไทม์
 
 รันแบบ build image เอง (ไม่ผ่าน compose):
@@ -78,9 +78,7 @@ docker run --rm -p 3000:3000 \
 
 ## ปุ่มเคลียร์ข้อมูลทั้งหมด
 
-ลบ session + ดัชนีไฟล์ + ไฟล์ใน `storage/uploads` แล้ว broadcast ไปยัง client ทั้งหมด
-
-ถ้าตั้งค่า environment variable `CEREMONY_CLEAR_SECRET` บนเซิร์ฟเวอร์ จะต้องใส่ค่าเดียวกันในช่อง “รหัสลับ” ในขั้นตอนยืนยันครั้งสุดท้าย และส่งเป็น header `x-ceremony-clear-secret`
+ลบ session + ดัชนีไฟล์ + ไฟล์ใน `storage/uploads` แล้ว broadcast ไปยัง client ทั้งหมด (ยืนยันครั้งเดียวใน UI)
 
 ## รูปแบบไฟล์ที่รองรับ
 

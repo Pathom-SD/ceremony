@@ -40,6 +40,7 @@ export function CeremonyVideoPlayer({ file, src, onClose }: Props) {
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
 
   const revealControls = useCallback(
     (autoHide: boolean, forcePlaying?: boolean) => {
@@ -254,12 +255,33 @@ export function CeremonyVideoPlayer({ file, src, onClose }: Props) {
               if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
             }}
             onTimeUpdate={() => setCurrentTime(videoRef.current?.currentTime ?? 0)}
-            onLoadedMetadata={() => {
-              setDuration(videoRef.current?.duration ?? 0);
+            onLoadStart={() => {
+              setVideoReady(false);
               setLoadError(false);
             }}
-            onError={() => setLoadError(true)}
+            onLoadedMetadata={() => {
+              setDuration(videoRef.current?.duration ?? 0);
+            }}
+            onCanPlay={() => setVideoReady(true)}
+            onError={() => {
+              setLoadError(true);
+              setVideoReady(false);
+            }}
           />
+
+          {!videoReady && !loadError ? (
+            <div
+              data-video-player-loading
+              className="pointer-events-none absolute inset-0 grid place-items-center bg-black"
+              role="status"
+              aria-live="polite"
+            >
+              <div className="flex flex-col items-center gap-3 text-white/85">
+                <span className="size-10 animate-spin rounded-full border-2 border-white/25 border-t-white" />
+                <span className="text-sm font-bold">{t("loadingVideo")}</span>
+              </div>
+            </div>
+          ) : null}
 
           {loadError ? (
             <p className="absolute inset-x-0 top-1/2 -translate-y-1/2 px-6 text-center text-sm font-semibold text-white/90">
@@ -359,7 +381,7 @@ export function CeremonyVideoPlayer({ file, src, onClose }: Props) {
             </div>
           </div>
 
-          {!playing && !loadError ? (
+          {!playing && !loadError && videoReady ? (
             <button
               type="button"
               onClick={togglePlay}

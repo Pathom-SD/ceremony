@@ -508,7 +508,7 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
       <button
         type="button"
         onClick={togglePanel}
-        className={`fixed right-4 top-4 grid size-12 place-items-center rounded-full bg-(--ceremony-primary) text-(--ceremony-primary-ink) shadow-[0_12px_32px_-8px_oklch(0.35_0.12_255/0.5)] transition hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 ${panelOpen ? "z-[80]" : "z-[90]"}`}
+        className="fixed right-4 top-4 z-40 grid size-12 place-items-center rounded-full bg-(--ceremony-primary) text-(--ceremony-primary-ink) shadow-[0_12px_32px_-8px_oklch(0.35_0.12_255/0.5)] transition hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0"
         aria-expanded={panelOpen}
         aria-label={t("toggleVideoPanel")}
       >

@@ -78,6 +78,26 @@ describe("CeremonyVideoPlayer", () => {
     expect(controls?.className).toContain("opacity-0");
   });
 
+  it("shows loading indicator until the video can play", () => {
+    const { container } = render(
+      <CeremonyVideoPlayer
+        file={sampleFile}
+        src="/api/files/vid-1?preview=1"
+        onClose={() => undefined}
+      />,
+    );
+
+    const loading = container.querySelector("[data-video-player-loading]");
+    expect(loading).not.toBeNull();
+    expect(loading?.textContent).toContain("loadingVideo");
+
+    const video = container.querySelector("video");
+    expect(video).not.toBeNull();
+    fireEvent.canPlay(video!);
+
+    expect(container.querySelector("[data-video-player-loading]")).toBeNull();
+  });
+
   it("expands player shell to true full screen when entering fullscreen mode", async () => {
     const { container } = render(
       <CeremonyVideoPlayer

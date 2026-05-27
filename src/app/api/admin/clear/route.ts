@@ -5,15 +5,7 @@ import { defaultSession } from "@/lib/session-types";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request) {
-  const secret = process.env.CEREMONY_CLEAR_SECRET;
-  if (secret) {
-    const auth = request.headers.get("x-ceremony-clear-secret");
-    if (auth !== secret) {
-      return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
-    }
-  }
-
+export async function POST() {
   await clearAllStorage();
   emitCeremony("session:cleared", {});
   emitCeremony("session:updated", { ...defaultSession });

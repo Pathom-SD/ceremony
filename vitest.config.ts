@@ -9,7 +9,13 @@ export default defineConfig({
   },
   test: {
     environment: "happy-dom",
-    exclude: ["**/node_modules/**", "**/.next/**", "**/dist/**", "**/build/**"],
+    exclude: [
+      "**/node_modules/**",
+      "**/node_modules.old*/**",
+      "**/.next/**",
+      "**/dist/**",
+      "**/build/**",
+    ],
     // Vitest supports this, but next's TS config may not know it.
     environmentMatchGlobs: [
       ["src/lib/**/*.test.ts", "node"],
