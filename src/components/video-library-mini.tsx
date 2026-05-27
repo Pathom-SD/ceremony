@@ -60,11 +60,15 @@ type Props = {
 
 export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
   const { t } = useAppPreferences();
+  const topicIdRef = useRef(topicId);
   const inputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [libraryExpanded, setLibraryExpanded] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [panelEntered, setPanelEntered] = useState(false);
+  const [panelMounted, setPanelMounted] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [playingFile, setPlayingFile] = useState<StoredFileRecord | null>(null);
   const [menu, setMenu] = useState<MenuState | null>(null);
   const [renameTarget, setRenameTarget] = useState<StoredFileRecord | null>(null);
@@ -85,8 +89,9 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
     setLibraryExpanded((e) => !e);
   }, []);
 
-  const closePanel = useCallback(() => {
+  const requestClosePanel = useCallback(() => {
     setLibraryExpanded(false);
+    setPanelEntered(false);
     setPanelOpen(false);
     setPlayingFile(null);
     setMenu(null);
@@ -96,8 +101,21 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
   const togglePanel = useCallback(() => {
     setPanelOpen((o) => {
       const next = !o;
-      if (next) void onRefresh();
-      if (!next) {
+      if (next) {
+        setPanelMounted(true);
+        // topic changes should allow a fresh first-load (avoid state-in-effect lint)
+        if (topicIdRef.current !== topicId) {
+          topicIdRef.current = topicId;
+          setHasLoadedOnce(false);
+        }
+        if (!hasLoadedOnce) {
+          void onRefresh();
+          setHasLoadedOnce(true);
+        }
+        // allow initial paint before starting slide-in transition
+        requestAnimationFrame(() => setPanelEntered(true));
+      } else {
+        setPanelEntered(false);
         setLibraryExpanded(false);
         setPlayingFile(null);
         setMenu(null);
@@ -105,7 +123,7 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
       return next;
     });
     setError(null);
-  }, [onRefresh]);
+  }, [hasLoadedOnce, onRefresh, topicId]);
 
   useEffect(() => {
     if (!menu) return;
@@ -264,16 +282,24 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
         />
       ) : null}
 
-      {panelOpen ? (
+      {panelMounted ? (
         <div
           ref={panelRef}
           className={
             libraryExpanded
               ? "fixed inset-0 z-[90] flex h-full w-full min-h-0 flex-col overflow-hidden border border-(--ceremony-border) bg-(--ceremony-surface) shadow-[0_22px_50px_-20px_oklch(0.2_0.05_255/0.55)]"
-              : "fixed bottom-[4.75rem] right-4 z-[90] flex w-[min(calc(100vw-2rem),380px)] max-h-[min(52vh,440px)] min-h-0 flex-col overflow-hidden rounded-[20px] border border-(--ceremony-border) bg-(--ceremony-surface) shadow-[0_22px_50px_-20px_oklch(0.2_0.05_255/0.55)]"
+              : `fixed right-0 top-0 z-[90] flex h-dvh w-[min(100vw,420px)] min-h-0 flex-col overflow-hidden rounded-none border-l border-(--ceremony-border) bg-(--ceremony-surface) shadow-[-20px_0_50px_-22px_oklch(0.2_0.05_255/0.55)] transition-transform duration-300 ease-out ${panelEntered ? "translate-x-0" : "translate-x-full"}`
           }
           role="dialog"
           aria-label={t("videoLibrary")}
+          aria-hidden={!panelOpen}
+          style={
+            panelOpen
+              ? undefined
+              : {
+                  pointerEvents: "none",
+                }
+          }
         >
           <div className="flex shrink-0 items-center gap-1.5 border-b border-(--ceremony-border) bg-(--ceremony-surface-2) px-3 py-2.5 sm:gap-2">
             <p className="min-w-0 flex-1 truncate text-sm font-black tracking-tight text-(--ceremony-ink)">
@@ -304,7 +330,7 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
             </button>
             <button
               type="button"
-              onClick={closePanel}
+              onClick={requestClosePanel}
               className="grid size-9 shrink-0 place-items-center rounded-full text-(--ceremony-muted) transition hover:bg-(--ceremony-surface) hover:text-(--ceremony-ink)"
               aria-label={t("close")}
             >
@@ -482,11 +508,11 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
       <button
         type="button"
         onClick={togglePanel}
-        className="fixed bottom-5 right-4 z-[90] grid size-14 place-items-center rounded-full bg-(--ceremony-primary) text-(--ceremony-primary-ink) shadow-[0_12px_32px_-8px_oklch(0.35_0.12_255/0.5)] transition hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0"
+        className={`fixed right-4 top-4 grid size-12 place-items-center rounded-full bg-(--ceremony-primary) text-(--ceremony-primary-ink) shadow-[0_12px_32px_-8px_oklch(0.35_0.12_255/0.5)] transition hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 ${panelOpen ? "z-[80]" : "z-[90]"}`}
         aria-expanded={panelOpen}
         aria-label={t("toggleVideoPanel")}
       >
-        <Play className="size-7 translate-x-0.5" strokeWidth={2.25} />
+        <Play className="size-6 translate-x-0.5" strokeWidth={2.25} />
       </button>
     </>
   );

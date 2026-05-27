@@ -49,6 +49,10 @@ describe("CeremonyVideoPlayer", () => {
     expect(backdrop).not.toBeNull();
     expect(backdrop?.className).toContain("bg-[oklch(0.08_0.02_255/0.82)]");
     expect(backdrop?.className).toContain("backdrop-blur-[3px]");
+
+    const shell = container.querySelector("[data-video-player-shell]");
+    expect(shell).not.toBeNull();
+    expect(shell?.className).toContain("max-w-[min(92vw,72rem)]");
   });
 
   it("hides bottom controls after 3 seconds without mouse movement while playing", async () => {
