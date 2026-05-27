@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Readable } from "node:stream";
+import type { ReadableStream as NodeReadableStream } from "node:stream/web";
 import { finished } from "node:stream/promises";
 import Busboy from "busboy";
 
@@ -97,6 +98,6 @@ export async function receiveMultipartFileUpload(
       void cleanupTemp().then(() => finish({ ok: false, error: "BAD_FORM" }));
     });
 
-    Readable.fromWeb(request.body as ReadableStream<Uint8Array>).pipe(busboy);
+    Readable.fromWeb(request.body as NodeReadableStream).pipe(busboy);
   });
 }

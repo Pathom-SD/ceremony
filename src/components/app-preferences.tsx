@@ -1,6 +1,8 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { LanguageToggle } from "./language-toggle";
+import { ThemeToggle } from "./theme-toggle";
 
 export type AppTheme = "light" | "dark";
 export type AppLanguage = "th" | "en";
@@ -182,8 +184,7 @@ const translations = {
     uploadHint: "PDF, Word, Excel, PowerPoint, CSV, TXT, images — multiple files allowed",
     uploadInvalid:
       "Only .pdf, .doc, .docx, .odt, .rtf, .xls, .xlsx, .ods, .csv, .ppt, .pptx, .odp, .txt and images are supported",
-    uploadVideoTopicOnly:
-      "Video uploads are only allowed in the video library panel, not in department topics",
+    uploadVideoTopicOnly: "Video uploads are only allowed in the video library panel, not in department topics",
     uploadInvalidVideo:
       "Only video files are supported here, e.g. .mp4, .webm, .mkv, .mov, .avi, .m4v, .ogg/.ogv — playback depends on browser and codecs",
     uploadVideoTooLarge: "Video file exceeds the 5 GB limit",
@@ -320,69 +321,16 @@ export function PreferenceControls() {
 
   return (
     <div className="mt-2 flex flex-wrap items-center gap-2">
-      <button
-        type="button"
-        role="switch"
-        aria-checked={isDark}
-        aria-label={`${t("theme")}: ${isDark ? t("dark") : t("light")}`}
-        onClick={() => setTheme(isDark ? "light" : "dark")}
-        className="group inline-flex min-h-8 items-center gap-2 rounded-full border border-(--ceremony-border) bg-(--ceremony-surface) px-2 py-1 text-[11px] font-black text-(--ceremony-muted) transition hover:border-(--ceremony-primary)"
-      >
-        <span className="pl-1">{t("theme")}</span>
-        <span className="relative grid h-6 w-[54px] grid-cols-2 rounded-full bg-(--ceremony-surface-2) p-0.5 text-[10px]">
-          <span
-            className={`z-10 grid place-items-center transition-colors ${
-              !isDark ? "text-(--ceremony-primary-ink)" : "text-(--ceremony-muted)"
-            }`}
-          >
-            LT
-          </span>
-          <span
-            className={`z-10 grid place-items-center transition-colors ${
-              isDark ? "text-(--ceremony-primary-ink)" : "text-(--ceremony-muted)"
-            }`}
-          >
-            DK
-          </span>
-          <span
-            className={`absolute top-0.5 h-5 w-[25px] rounded-full bg-(--ceremony-primary) shadow-sm transition-transform ${
-              isDark ? "translate-x-[27px]" : "translate-x-0.5"
-            }`}
-          />
-        </span>
-      </button>
-
-      <button
-        type="button"
-        role="switch"
-        aria-checked={isEnglish}
+      <LanguageToggle
+        checked={isEnglish}
+        onCheckedChange={(checked) => setLanguage(checked ? "en" : "th")}
         aria-label={`${t("language")}: ${language.toUpperCase()}`}
-        onClick={() => setLanguage(isEnglish ? "th" : "en")}
-        className="group inline-flex min-h-8 items-center gap-2 rounded-full border border-(--ceremony-border) bg-(--ceremony-surface) px-2 py-1 text-[11px] font-black text-(--ceremony-muted) transition hover:border-(--ceremony-primary)"
-      >
-        <span className="pl-1">{t("language")}</span>
-        <span className="relative grid h-6 w-[54px] grid-cols-2 rounded-full bg-(--ceremony-surface-2) p-0.5 text-[10px]">
-          <span
-            className={`z-10 grid place-items-center transition-colors ${
-              !isEnglish ? "text-(--ceremony-primary-ink)" : "text-(--ceremony-muted)"
-            }`}
-          >
-            TH
-          </span>
-          <span
-            className={`z-10 grid place-items-center transition-colors ${
-              isEnglish ? "text-(--ceremony-primary-ink)" : "text-(--ceremony-muted)"
-            }`}
-          >
-            EN
-          </span>
-          <span
-            className={`absolute top-0.5 h-5 w-[25px] rounded-full bg-(--ceremony-primary) shadow-sm transition-transform ${
-              isEnglish ? "translate-x-[27px]" : "translate-x-0.5"
-            }`}
-          />
-        </span>
-      </button>
+      />
+      <ThemeToggle
+        checked={isDark}
+        onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+        aria-label={`${t("theme")}: ${isDark ? t("dark") : t("light")}`}
+      />
     </div>
   );
 }
