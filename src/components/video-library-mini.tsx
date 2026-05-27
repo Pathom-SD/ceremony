@@ -1,17 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  ArrowLeft,
-  Maximize2,
-  Minimize2,
-  MoreVertical,
-  Play,
-  Upload,
-  X,
-} from "lucide-react";
+import { Maximize2, Minimize2, MoreVertical, Play, Upload, X } from "lucide-react";
 import type { StoredFileRecord } from "@/lib/file-types";
 import { isVideoExt, VIDEO_EXTENSIONS } from "@/lib/file-types";
+import { CeremonyVideoPlayer } from "./ceremony-video-player";
 import { useAppPreferences } from "./app-preferences";
 
 const VIDEO_ACCEPT = [
@@ -72,8 +65,7 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
   const menuRef = useRef<HTMLDivElement>(null);
   const [libraryExpanded, setLibraryExpanded] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
-  const [view, setView] = useState<"grid" | "play">("grid");
-  const [active, setActive] = useState<StoredFileRecord | null>(null);
+  const [playingFile, setPlayingFile] = useState<StoredFileRecord | null>(null);
   const [menu, setMenu] = useState<MenuState | null>(null);
   const [renameTarget, setRenameTarget] = useState<StoredFileRecord | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
@@ -96,8 +88,7 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
   const closePanel = useCallback(() => {
     setLibraryExpanded(false);
     setPanelOpen(false);
-    setView("grid");
-    setActive(null);
+    setPlayingFile(null);
     setMenu(null);
     setError(null);
   }, []);
@@ -108,8 +99,7 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
       if (next) void onRefresh();
       if (!next) {
         setLibraryExpanded(false);
-        setView("grid");
-        setActive(null);
+        setPlayingFile(null);
         setMenu(null);
       }
       return next;
@@ -129,6 +119,9 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
   }, [menu]);
+
+  const activePlayingFile =
+    playingFile && videos.some((v) => v.id === playingFile.id) ? playingFile : null;
 
   const upload = async (list: FileList | null) => {
     if (!list?.length) return;
@@ -205,10 +198,7 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
       setError(t("removeFailed"));
       return;
     }
-    if (active?.id === file.id) {
-      setActive(null);
-      setView("grid");
-    }
+    if (playingFile?.id === file.id) setPlayingFile(null);
     onRefresh();
   };
 
@@ -251,12 +241,9 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
 
   const selectVideo = (file: StoredFileRecord) => {
     setMenu(null);
-    setActive(file);
-    setView("play");
+    setError(null);
+    setPlayingFile(file);
   };
-
-  const videoSrc =
-    active ? `/api/files/${active.id}?preview=1` : "";
 
   return (
     <>
@@ -268,6 +255,14 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
         className="hidden"
         onChange={(e) => void upload(e.target.files)}
       />
+
+      {activePlayingFile ? (
+        <CeremonyVideoPlayer
+          file={activePlayingFile}
+          src={`/api/files/${activePlayingFile.id}?preview=1`}
+          onClose={() => setPlayingFile(null)}
+        />
+      ) : null}
 
       {panelOpen ? (
         <div
@@ -281,66 +276,32 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
           aria-label={t("videoLibrary")}
         >
           <div className="flex shrink-0 items-center gap-1.5 border-b border-(--ceremony-border) bg-(--ceremony-surface-2) px-3 py-2.5 sm:gap-2">
-            {view === "play" && active ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setView("grid");
-                    setActive(null);
-                  }}
-                  className="grid size-9 shrink-0 place-items-center rounded-full text-(--ceremony-muted) transition hover:bg-(--ceremony-surface) hover:text-(--ceremony-ink)"
-                  aria-label={t("backToVideoList")}
-                >
-                  <ArrowLeft className="size-5" strokeWidth={2.25} />
-                </button>
-                <p className="min-w-0 flex-1 truncate text-sm font-bold text-(--ceremony-ink)">
-                  {active.originalName}
-                </p>
-                <button
-                  type="button"
-                  onClick={toggleLibraryExpanded}
-                  className="grid size-9 shrink-0 place-items-center rounded-full text-(--ceremony-muted) transition hover:bg-(--ceremony-surface) hover:text-(--ceremony-ink)"
-                  aria-label={libraryExpanded ? t("videoShrinkPanel") : t("videoExpandPanel")}
-                  title={libraryExpanded ? t("videoShrinkPanel") : t("videoExpandPanel")}
-                >
-                  {libraryExpanded ? (
-                    <Minimize2 className="size-[18px]" strokeWidth={2.25} />
-                  ) : (
-                    <Maximize2 className="size-[18px]" strokeWidth={2.25} />
-                  )}
-                </button>
-              </>
-            ) : (
-              <>
-                <p className="min-w-0 flex-1 truncate text-sm font-black tracking-tight text-(--ceremony-ink)">
-                  {t("videoLibrary")}
-                </p>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => inputRef.current?.click()}
-                  title={t("uploadVideo")}
-                  className="inline-flex min-h-9 min-w-0 max-w-[min(100%,14rem)] shrink items-center gap-1.5 rounded-full border border-(--ceremony-border) bg-(--ceremony-surface) px-2.5 text-[11px] font-bold text-(--ceremony-ink) transition enabled:hover:border-(--ceremony-primary) sm:px-3 sm:text-xs"
-                >
-                  <Upload className="size-3.5 shrink-0" strokeWidth={2.5} />
-                  <span className="truncate">{t("uploadVideo")}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={toggleLibraryExpanded}
-                  className="grid size-9 shrink-0 place-items-center rounded-full text-(--ceremony-muted) transition hover:bg-(--ceremony-surface) hover:text-(--ceremony-ink)"
-                  aria-label={libraryExpanded ? t("videoShrinkPanel") : t("videoExpandPanel")}
-                  title={libraryExpanded ? t("videoShrinkPanel") : t("videoExpandPanel")}
-                >
-                  {libraryExpanded ? (
-                    <Minimize2 className="size-[18px]" strokeWidth={2.25} />
-                  ) : (
-                    <Maximize2 className="size-[18px]" strokeWidth={2.25} />
-                  )}
-                </button>
-              </>
-            )}
+            <p className="min-w-0 flex-1 truncate text-sm font-black tracking-tight text-(--ceremony-ink)">
+              {t("videoLibrary")}
+            </p>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => inputRef.current?.click()}
+              title={t("uploadVideo")}
+              className="inline-flex min-h-9 min-w-0 max-w-[min(100%,14rem)] shrink items-center gap-1.5 rounded-full border border-(--ceremony-border) bg-(--ceremony-surface) px-2.5 text-[11px] font-bold text-(--ceremony-ink) transition enabled:hover:border-(--ceremony-primary) sm:px-3 sm:text-xs"
+            >
+              <Upload className="size-3.5 shrink-0" strokeWidth={2.5} />
+              <span className="truncate">{t("uploadVideo")}</span>
+            </button>
+            <button
+              type="button"
+              onClick={toggleLibraryExpanded}
+              className="grid size-9 shrink-0 place-items-center rounded-full text-(--ceremony-muted) transition hover:bg-(--ceremony-surface) hover:text-(--ceremony-ink)"
+              aria-label={libraryExpanded ? t("videoShrinkPanel") : t("videoExpandPanel")}
+              title={libraryExpanded ? t("videoShrinkPanel") : t("videoExpandPanel")}
+            >
+              {libraryExpanded ? (
+                <Minimize2 className="size-[18px]" strokeWidth={2.25} />
+              ) : (
+                <Maximize2 className="size-[18px]" strokeWidth={2.25} />
+              )}
+            </button>
             <button
               type="button"
               onClick={closePanel}
@@ -387,75 +348,63 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
               </p>
             ) : null}
 
-            {view === "play" && active ? (
-              <div className="flex min-h-0 flex-1 flex-col bg-black">
-                <video
-                  key={active.id}
-                  src={videoSrc}
-                  className={
-                    libraryExpanded
-                      ? "h-full min-h-0 w-full flex-1 bg-black object-contain"
-                      : "max-h-[min(40vh,360px)] w-full shrink-0 bg-black object-contain"
-                  }
-                  controls
-                  playsInline
-                  preload="metadata"
-                  onError={() => setError(t("videoPlayError"))}
-                />
-              </div>
-            ) : (
-              <div className="min-h-0 flex-1 overflow-y-auto p-3">
-                {videos.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-(--ceremony-muted)">{t("noVideosYet")}</p>
-                ) : (
-                  <div className="grid grid-cols-2 gap-2.5">
-                    {videos.map((file) => {
-                      const thumbSrc = `/api/files/${file.id}?preview=1`;
-                      return (
-                        <div
-                          key={file.id}
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => selectVideo(file)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              selectVideo(file);
-                            }
-                          }}
-                          className="group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-(--ceremony-border) bg-(--ceremony-surface-2) text-left transition hover:border-(--ceremony-primary) hover:shadow-md"
-                          aria-label={file.originalName}
-                        >
-                          <div className="relative aspect-video w-full bg-black">
-                            <video
-                              src={thumbSrc}
-                              className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-80"
-                              muted
-                              playsInline
-                              preload="metadata"
-                            />
-                            <div className="absolute inset-0 flex items-center justify-center bg-[oklch(0_0_0/0.25)] transition group-hover:bg-[oklch(0_0_0/0.35)]">
-                              <Play className="size-9 text-white drop-shadow-md" fill="currentColor" />
-                            </div>
-                            <button
-                              type="button"
-                              onClick={(e) => openMenu(e, file)}
-                              className="absolute right-1.5 top-1.5 z-10 grid size-8 place-items-center rounded-full bg-[oklch(0_0_0/0.55)] text-white backdrop-blur-sm transition hover:bg-[oklch(0_0_0/0.72)]"
-                              aria-label={t("moreActions")}
-                            >
-                              <MoreVertical className="size-4" strokeWidth={2.5} />
-                            </button>
+            <div className="min-h-0 flex-1 overflow-y-auto p-3">
+              {videos.length === 0 ? (
+                <p className="py-8 text-center text-sm text-(--ceremony-muted)">{t("noVideosYet")}</p>
+              ) : (
+                <div className="grid grid-cols-2 gap-2.5">
+                  {videos.map((file) => {
+                    const thumbSrc = `/api/files/${file.id}?preview=1`;
+                    const isPlaying = activePlayingFile?.id === file.id;
+                    return (
+                      <div
+                        key={file.id}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => selectVideo(file)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            selectVideo(file);
+                          }
+                        }}
+                        className={`group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border bg-(--ceremony-surface-2) text-left transition hover:shadow-md ${
+                          isPlaying
+                            ? "border-(--ceremony-primary) ring-2 ring-(--ceremony-primary)/35"
+                            : "border-(--ceremony-border) hover:border-(--ceremony-primary)"
+                        }`}
+                        aria-label={file.originalName}
+                        aria-current={isPlaying ? "true" : undefined}
+                      >
+                        <div className="relative aspect-video w-full bg-black">
+                          <video
+                            src={thumbSrc}
+                            className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-80"
+                            muted
+                            playsInline
+                            preload="metadata"
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center bg-[oklch(0_0_0/0.25)] transition group-hover:bg-[oklch(0_0_0/0.35)]">
+                            <Play className="size-9 text-white drop-shadow-md" fill="currentColor" />
                           </div>
-                          <span className="line-clamp-2 px-2 py-1.5 text-[11px] font-semibold leading-snug text-(--ceremony-ink)">
-                            {file.originalName}
-                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => openMenu(e, file)}
+                            className="absolute right-1.5 top-1.5 z-10 grid size-8 place-items-center rounded-full bg-[oklch(0_0_0/0.55)] text-white backdrop-blur-sm transition hover:bg-[oklch(0_0_0/0.72)]"
+                            aria-label={t("moreActions")}
+                          >
+                            <MoreVertical className="size-4" strokeWidth={2.25} />
+                          </button>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
+                        <span className="line-clamp-2 px-2 py-1.5 text-[11px] font-semibold leading-snug text-(--ceremony-ink)">
+                          {file.originalName}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
 
           {renameTarget ? (
