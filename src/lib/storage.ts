@@ -128,7 +128,18 @@ export async function saveUploadedFileFromPath(params: {
 
   const dir = path.join(UPLOADS_DIR, params.topicId);
   await ensureDir(dir);
-  await fs.rename(params.sourcePath, diskPathFor(record));
+  const dest = diskPathFor(record);
+  try {
+    await fs.rename(params.sourcePath, dest);
+  } catch (e) {
+    const code =
+      e && typeof e === "object" && "code" in e
+        ? String((e as NodeJS.ErrnoException).code)
+        : "";
+    if (code !== "EXDEV") throw e;
+    await fs.copyFile(params.sourcePath, dest);
+    await fs.unlink(params.sourcePath);
+  }
 
   const index = await readFileIndex();
   index.files.push(record);

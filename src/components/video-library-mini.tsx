@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Maximize2, Minimize2, MoreVertical, Play, Upload, X } from "lucide-react";
 import type { StoredFileRecord } from "@/lib/file-types";
 import { isVideoExt, VIDEO_EXTENSIONS } from "@/lib/file-types";
-import { startFormUpload, UPLOAD_ABORTED } from "@/lib/form-upload";
+import { uploadTopicFile, UPLOAD_ABORTED } from "@/lib/topic-file-upload";
+import { isUploadTooLarge } from "@/lib/upload-limits";
 import { CeremonyVideoPlayer } from "./ceremony-video-player";
 import { useAppPreferences } from "./app-preferences";
 
@@ -123,6 +124,11 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
   const upload = async (list: FileList | null) => {
     if (!list?.length) return;
     const fileArr = Array.from(list);
+    if (fileArr.some((f) => isUploadTooLarge(topicId, f.size))) {
+      setError(t("uploadVideoTooLarge"));
+      if (inputRef.current) inputRef.current.value = "";
+      return;
+    }
     const totalBytes = Math.max(1, fileArr.reduce((s, f) => s + f.size, 0));
     setBusy(true);
     setError(null);
@@ -146,11 +152,9 @@ export function VideoLibraryMini({ topicId, files, onRefresh }: Props) {
               }
             : null,
         );
-        const fd = new FormData();
-        fd.set("file", file);
-        const { promise, abort } = startFormUpload(
-          `/api/topics/${topicId}/files`,
-          fd,
+        const { promise, abort } = uploadTopicFile(
+          topicId,
+          file,
           (loaded, total, computable) => {
             let pct: number;
             if (computable && total > 0) {

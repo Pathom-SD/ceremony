@@ -8,6 +8,9 @@ import type { ReadableStream as NodeReadableStream } from "node:stream/web";
 import { finished } from "node:stream/promises";
 import Busboy from "busboy";
 
+/** บัฟเฟอร์เขียนดิสก์ใหญ่ขึ้นลด syscall ตอนอัปโหลดวิดีโอหลายร้อย MB–GB */
+const DISK_WRITE_HIGH_WATER_MARK = 1024 * 1024;
+
 export type MultipartUploadResult =
   | {
       ok: true;
@@ -20,6 +23,8 @@ export type MultipartUploadResult =
 type Options = {
   fieldName?: string;
   maxFileBytes: number;
+  /** ค่าเริ่มต้น os.tmpdir() — ใน Docker ใช้ UPLOAD_TMP_DIR เพื่อให้ rename ไป uploads/ ได้ */
+  tempDir?: string;
 };
 
 export async function receiveMultipartFileUpload(
@@ -62,8 +67,10 @@ export async function receiveMultipartFileUpload(
       }
       gotFile = true;
       filename = info.filename || "upload";
-      tempPath = join(tmpdir(), `ceremony-upload-${randomUUID()}`);
-      const out = createWriteStream(tempPath);
+      tempPath = join(options.tempDir ?? tmpdir(), `ceremony-upload-${randomUUID()}`);
+      const out = createWriteStream(tempPath, {
+        highWaterMark: DISK_WRITE_HIGH_WATER_MARK,
+      });
       stream.on("data", (chunk: Buffer) => {
         size += chunk.length;
       });

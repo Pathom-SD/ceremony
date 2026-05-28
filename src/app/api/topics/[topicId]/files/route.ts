@@ -1,3 +1,4 @@
+import { mkdir } from "node:fs/promises";
 import { NextResponse } from "next/server";
 import { ceremonyVideosTopic, isValidTopicId } from "@/lib/ceremony-topics";
 import { ALLOWED_EXTENSIONS, isVideoExt, normalizeExt } from "@/lib/file-types";
@@ -7,8 +8,8 @@ import {
   getMaxUploadBytesForTopic,
   isUploadTooLarge,
 } from "@/lib/upload-limits";
+import { UPLOAD_TMP_DIR } from "@/lib/paths";
 import { listFilesForTopic, saveUploadedFileFromPath } from "@/lib/storage";
-
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
@@ -35,7 +36,11 @@ export async function POST(request: Request, ctx: RouteCtx) {
   }
 
   const maxFileBytes = getMaxUploadBytesForTopic(topicId);
-  const uploaded = await receiveMultipartFileUpload(request, { maxFileBytes });
+  await mkdir(UPLOAD_TMP_DIR, { recursive: true });
+  const uploaded = await receiveMultipartFileUpload(request, {
+    maxFileBytes,
+    tempDir: UPLOAD_TMP_DIR,
+  });
 
   if (!uploaded.ok) {
     const status =

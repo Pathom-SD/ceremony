@@ -53,6 +53,8 @@ docker compose up --build -d
 - **พอร์ต / bind**: ค่าเริ่มต้นคือ `PORT=3000`, `LISTEN_HOST=0.0.0.0` (ปรับใน `environment` ของ compose ได้)
 - **ตัวแปรสภาพแวดล้อมอื่นๆ**: ถ้าไม่ใช้ Gotenberg ให้ลบ `GOTENBERG_URL` ออกจาก compose แล้วตั้ง `LIBREOFFICE_PATH` บน image/เครื่องที่รัน `ceremony` (ต้องมี binary `soffice` จริงใน container/host)
 - **Reverse proxy**: ถ้าวางหลัง Nginx/Caddy/Traefik ต้องเปิด WebSocket และ proxy path `/socket.io/` ให้ถึงแอป ไม่งั้นรายการไฟล์อาจไม่อัปเดตแบบเรียลไทม์
+- **อัปโหลดวิดีโอใหญ่ (>1 GB)**: ไฟล์ชั่วคราวต้องอยู่ volume เดียวกับ `storage/uploads` (`storage/uploads/.tmp`) — อย่าใช้ `/tmp` ของคอนเทนเนอร์ เพราะ `rename` ข้าม device จะ fallback เป็น `copyFile` ช้ามากและอาจ timeout
+- **Cloudflare**: proxy มาตรฐานจำกัด body ต่อ request ~**100 MB** (413 จาก Cloudflare) — แอปแยกไฟล์ >90 MB เป็นหลาย chunk 50 MB ไปที่ `POST /api/topics/.../files/chunks` อัตโนมัติ; ถ้ามี Nginx/Traefik หน้าแอป (ไม่ใช่ Cloudflare) ตั้ง `client_max_body_size` อย่างน้อย **5g** สำหรับอัปโหลดแบบไม่แยก chunk
 
 รันแบบ build image เอง (ไม่ผ่าน compose):
 

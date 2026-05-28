@@ -22,6 +22,10 @@ app.prepare().then(() => {
     }
   });
 
+  // Node 22 ค่าเริ่มต้น requestTimeout ~5 นาที — วิดีโอหลาย GB บน LAN ช้าจะขาดก่อนอัปโหลดครบ
+  server.requestTimeout = 0;
+  server.headersTimeout = 0;
+
   const io = new Server(server, {
     path: "/socket.io/",
     cors: { origin: "*" },

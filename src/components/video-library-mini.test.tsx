@@ -1,11 +1,12 @@
 import { fireEvent, render, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { startFormUpload } from "@/lib/form-upload";
+import { uploadTopicFile } from "@/lib/topic-file-upload";
+import { MAX_CEREMONY_VIDEO_UPLOAD_BYTES } from "@/lib/upload-limits";
 import { VideoLibraryMini } from "./video-library-mini";
 
-vi.mock("@/lib/form-upload", () => ({
+vi.mock("@/lib/topic-file-upload", () => ({
   UPLOAD_ABORTED: "UPLOAD_ABORTED",
-  startFormUpload: vi.fn(),
+  uploadTopicFile: vi.fn(),
 }));
 
 vi.mock("./app-preferences", () => ({
@@ -137,7 +138,7 @@ describe("VideoLibraryMini", () => {
 
   it("shows cancel during upload and aborts the in-flight request", async () => {
     const abort = vi.fn();
-    vi.mocked(startFormUpload).mockReturnValue({
+    vi.mocked(uploadTopicFile).mockReturnValue({
       promise: new Promise(() => undefined),
       abort,
     });
@@ -162,6 +163,32 @@ describe("VideoLibraryMini", () => {
     expect(cancelBtn).not.toBeNull();
     fireEvent.click(cancelBtn!);
     expect(abort).toHaveBeenCalled();
+  });
+
+  it("rejects oversize videos before starting upload", async () => {
+    vi.mocked(uploadTopicFile).mockClear();
+    const { container } = render(
+      <VideoLibraryMini
+        topicId="ceremony-videos"
+        files={[]}
+        onRefresh={() => undefined}
+      />,
+    );
+
+    fireEvent.click(container.querySelector('button[aria-label="toggleVideoPanel"]')!);
+
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(["x"], "huge.mp4", { type: "video/mp4" });
+    Object.defineProperty(file, "size", {
+      value: MAX_CEREMONY_VIDEO_UPLOAD_BYTES + 1,
+      configurable: true,
+    });
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => {
+      expect(container.textContent).toContain("uploadVideoTooLarge");
+    });
+    expect(uploadTopicFile).not.toHaveBeenCalled();
   });
 
   it("keeps the menu open on more-button mousedown so the following click can toggle closed", () => {

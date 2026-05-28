@@ -20,7 +20,7 @@
 
 ## Ceremony video size
 
-อัปโหลดวิดีโอในหัวข้อ `ceremony-videos` จำกัดสูงสุด **5 GiB ต่อไฟล์** (`src/lib/upload-limits.ts`, `experimental.proxyClientMaxBodySize: "5gb"` ใน `next.config.ts`) — API รับ multipart แบบ **สตรีมลงดิสก์** (`src/lib/multipart-upload.ts`) ไม่ใช้ `request.formData()` เพื่อรองรับไฟล์หลาย GB — ขนาดในงานจริงมักอยู่ช่วงประมาณ 500 MB ถึง 2 GB การเล่นใช้สตรีม + Range ไม่โหลดทั้งไฟล์เข้า RAM
+อัปโหลดวิดีโอในหัวข้อ `ceremony-videos` จำกัดสูงสุด **5 GiB ต่อไฟล์** (`src/lib/upload-limits.ts`, `experimental.proxyClientMaxBodySize: "5gb"` ใน `next.config.ts`) — ไฟล์ ≤90 MB ใช้ `POST .../files` (multipart สตรีมลงดิสก์); ไฟล์ใหญ่กว่าใช้ **chunked upload** 50 MB ต่อ request ไป `POST .../files/chunks` (รองรับ Cloudflare ~100 MB/request) ผ่าน `uploadTopicFile` — ขนาดในงานจริงมักอยู่ช่วงประมาณ 500 MB ถึง 2 GB การเล่นใช้สตรีม + Range ไม่โหลดทั้งไฟล์เข้า RAM
 
 ## Video response caching
 

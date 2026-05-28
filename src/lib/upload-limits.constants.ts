@@ -14,3 +14,9 @@ export const MAX_TOPIC_FILE_UPLOAD_BYTES = 100 * MiB;
 export const NEXT_PROXY_MAX_BODY_SIZE = "5gb" as const;
 
 export const NEXT_PROXY_MAX_BODY_BYTES = MAX_CEREMONY_VIDEO_UPLOAD_BYTES;
+
+/** ขนาดต่อ chunk — ต่ำกว่าขีด Cloudflare ~100MB */
+export const UPLOAD_CHUNK_SIZE_BYTES = 50 * MiB;
+
+/** ไฟล์ใหญ่กว่านี้ใช้ chunked upload แทน POST เดียว */
+export const CHUNKED_UPLOAD_THRESHOLD_BYTES = 90 * MiB;
