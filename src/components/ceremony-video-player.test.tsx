@@ -160,5 +160,49 @@ describe("CeremonyVideoPlayer", () => {
     expect(shell?.className).toContain("w-screen");
     expect(shell?.className).toContain("h-screen");
   });
+
+  it("toggles loop mode for the current player session", () => {
+    const { container } = render(
+      <CeremonyVideoPlayer
+        file={sampleFile}
+        src="/api/files/vid-1?preview=1"
+        onClose={() => undefined}
+      />,
+    );
+
+    const video = container.querySelector("video") as HTMLVideoElement | null;
+    expect(video).not.toBeNull();
+    expect(video?.loop).toBe(false);
+
+    const loopBtn = container.querySelector('button[aria-label="videoLoop"]');
+    expect(loopBtn).not.toBeNull();
+    fireEvent.click(loopBtn!);
+    expect(video?.loop).toBe(true);
+    fireEvent.click(loopBtn!);
+    expect(video?.loop).toBe(false);
+  });
+
+  it("changes playback speed from standard options", () => {
+    const { container } = render(
+      <CeremonyVideoPlayer
+        file={sampleFile}
+        src="/api/files/vid-1?preview=1"
+        onClose={() => undefined}
+      />,
+    );
+
+    const video = container.querySelector("video") as HTMLVideoElement | null;
+    expect(video).not.toBeNull();
+    expect(video?.playbackRate).toBe(1);
+
+    const speedSelect = container.querySelector(
+      'select[aria-label="videoPlaybackSpeed"]',
+    ) as HTMLSelectElement | null;
+    expect(speedSelect).not.toBeNull();
+
+    fireEvent.change(speedSelect!, { target: { value: "1.5" } });
+    expect(video?.playbackRate).toBe(1.5);
+    expect(speedSelect?.value).toBe("1.5");
+  });
 });
 

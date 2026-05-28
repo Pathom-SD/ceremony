@@ -7,6 +7,7 @@ import { useAppPreferences } from "./app-preferences";
 
 const SEEK_STEP_SEC = 10;
 const CONTROLS_HIDE_MS = 3000;
+const PLAYBACK_SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
 
 function formatTime(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
@@ -41,6 +42,8 @@ export function CeremonyVideoPlayer({ file, src, onClose }: Props) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
+  const [loopEnabled, setLoopEnabled] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1);
 
   const revealControls = useCallback(
     (autoHide: boolean, forcePlaying?: boolean) => {
@@ -125,6 +128,18 @@ export function CeremonyVideoPlayer({ file, src, onClose }: Props) {
     video.volume = volume;
     if (!muted) video.muted = false;
   }, [volume, muted]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.loop = loopEnabled;
+  }, [loopEnabled]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.playbackRate = playbackRate;
+  }, [playbackRate]);
 
   useEffect(() => {
     const onFullscreenChange = () => {
@@ -355,6 +370,30 @@ export function CeremonyVideoPlayer({ file, src, onClose }: Props) {
                     aria-label={t("videoVolume")}
                   />
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => setLoopEnabled((v) => !v)}
+                  className={`grid size-10 place-items-center rounded-full text-xs font-bold transition ${
+                    loopEnabled ? "bg-white/25 text-white" : "text-white/90 hover:bg-white/15"
+                  }`}
+                  aria-label={t("videoLoop")}
+                >
+                  {loopEnabled ? "LOOP" : "ONCE"}
+                </button>
+
+                <select
+                  value={String(playbackRate)}
+                  onChange={(e) => setPlaybackRate(Number(e.target.value))}
+                  className="h-9 rounded-full bg-white/15 px-3 text-xs font-bold text-white outline-none transition hover:bg-white/25"
+                  aria-label={t("videoPlaybackSpeed")}
+                >
+                  {PLAYBACK_SPEEDS.map((speed) => (
+                    <option key={speed} value={String(speed)} className="text-black">
+                      {speed}x
+                    </option>
+                  ))}
+                </select>
 
                 <button
                   type="button"
